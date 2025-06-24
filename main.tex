@@ -1,0 +1,127 @@
+\documentclass{thesis}
+\usepackage{graphicx}   % if you want to include graphics files
+\usepackage[
+    style=numeric,
+    natbib=true,
+    sorting=none
+]{biblatex}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{multirow}
+
+
+\makeatletter
+\newcommand{\lambdabar}{{\mathchoice
+  {\smash@bar\textfont\displaystyle{0.25}{1.2}\lambda}
+  {\smash@bar\textfont\textstyle{0.25}{1.2}\lambda}
+  {\smash@bar\scriptfont\scriptstyle{0.25}{1.2}\lambda}
+  {\smash@bar\scriptscriptfont\scriptscriptstyle{0.25}{1.2}\lambda}
+}}
+\newcommand{\smash@bar}[4]{%
+  \smash{\rlap{\raisebox{-#3\fontdimen5#10}{$\m@th#2\mkern#4mu\mathchar'26$}}}%
+}
+\makeatother
+
+
+\addbibresource{bibliography.bib}
+
+% Use the first command below if you want captions over 1 line indented.
+% A side effect of this is to remove the use of bold for captions. 
+% To restore bold, also include the second line below.
+%\usepackage[hang]{caption}     % to indent subsequent lines of captions
+%\renewcommand{\captionfont}{\bfseries} % only needed with caption package;
+                                        %   otherwise bold is default)
+                                        
+%%%%%%%%%%%%%%%%%%%%  supply titlepage info  %%%%%%%%%%%%%%%%%%%%%
+\thesistitle{\bf Determining Resonance Parameters of Self-Shielded Measurements in the Unresolved Resonance Region}        
+\author{Alec William Golas}        
+\degree{}
+\department{Nuclear Engineering} % provide your area of study here; e.g.,
+%  "Mechanical Engineering", "Nuclear Engineering", "Physics", etc.
+\thadviser{Yaron Danon}
+\signaturelines{5} 
+\memberone{Dr. Wei Ji}        
+\membertwo{Dr. Emily Lu}        
+\memberthree{Dr. David Brown}
+\memberfour{Dr. Devin Barry}
+%\cothadviser{First co-adviser} %if needed
+%\cocothadviser{Second co-adviser} % if needed
+%  For a masters project use \projadviser instead of \thadviser, 
+%  and \coprojadviser and \cocoprojadviser if needed. 
+\submitdate{November 2025}        
+%\copyrightyear{1685}  % if date omitted, current year is used. 
+%%%%%%%%%%%%%%%%%%%%%   end titlepage info  %%%%%%%%%%%%%%%%%%%%%%
+      
+\begin{document} 
+\titlepage             % Print titlepage   
+%\copyrightpage        % optional         
+\tableofcontents       % required 
+\listoftables          % required if there are tables
+\listoffigures         % required if there are figures
+
+
+\chapter{Introduction}
+\label{chap:introduction}
+\input{Introduction/introduction}
+
+\chapter{Statistical Theory of the Unresolved Resonance Region}
+\label{chap:theory}
+\input{Theory/theory}
+
+\chapter{Implementation Details}
+\label{chap:implementation}
+\input{Implementation/implementation}
+
+% \chapter{Transmission Correction}
+% \label{chap:transmission-correction}
+% \input{Transmission Correction/transmission-correction}
+
+% \chapter{Capture Yield Correction}
+% \label{chap:capture-yield-correction}
+% \input{Capture Yield/capture-yield}
+
+% \chapter{Fitting URR Parameters}
+% \label{chap:fitting}
+% \input{Fitting/fitting}
+
+% \chapter{Evaluation}
+% \label{chap:evaluation}
+% \input{Evaluation/evaluation}
+
+% \chapter{Conclusion}
+% \label{chap:conclusion}
+% \input{Conclusion/conclusion}
+
+
+
+
+%\specialhead{ACKNOWLEDGMENT}
+%The acknowledgment text goes here. Unlike chapter headings, 
+%this heading is not numbered.
+
+%\specialhead{ABSTRACT}
+%Write your abstract here. Again, the heading does not receive a number.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%% Bibliography      %%%%%%%%%%%%%%%%%%%
+\printbibliography[title=Literature Cited]
+
+
+%%%%%%%%%%%%%%%%%%%%%%%  For Appendices  %%%%%%%%%%%%%%%%%%%
+%\appendix    % This command is used only once!
+%\addtocontents{toc}{\parindent0pt\vskip12pt APPENDICES} %toc entry, no page #
+
+%Note the numbering of the chapter heading is changed.
+%This is a sentence to take up space and look like text.
+%\section{A Section Heading}
+%This is how equations are numbered in an appendix:
+%\begin{equation}
+%x^2 + y^2 = z^2
+%\end{equation} 
+%
+%\chapter{THIS IS ANOTHER APPENDIX}
+%This is a sentence to take up space and look like text.
+
+\end{document}

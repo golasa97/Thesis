@@ -1,0 +1,100 @@
+\section{M+W Bayesian Fitting}
+
+The goal of this fitting method is to determine a set of parameters that best describes a set of experimental measurements. Given an initial parameter vector $\mathbf{U}$, each element of which has a given prior covariance $M$, we seek to find an updated parameter vector $\mathbf{U}'$ which reduces the discrepancy between theoretical predictions, $\mathbf{t}(\mathbf{U}')$, and experimental data, $\mathbf{d}$.
+
+This is done by performing a Bayesian least-squares optimization, using a method called $M+W$. The $M+W$ method determines the parameter vector $\mathbf{U}'$ as determined as a sum between the original parameter vector $\mathbf{U}$ plus a correction term $\Delta \theta$,
+\begin{equation}
+    \mathbf{U}' = \mathbf{U} + \Delta \theta
+\end{equation}
+and the updated covariance $\mathbf{M}'$ as
+\begin{equation}
+    M' = \left(M^{-1} + W\right)^{-1}
+\end{equation}
+in which $W$ represents the "model precision". The following will describe how to obtain the $\Delta \theta$ and $W$ terms.
+
+Starting with $n$ parameters, the prior covariance matrix $\mathbf{M}$, which is an $n\times n$ matrix. It is assumed that the parameter uncertainties are uncorrelated, such that $\mathbf{M}$ is a diagonal matrix,
+\begin{equation}
+    \mathbf{M} = 
+\begin{bmatrix}
+\sigma_{u_1}^2 & 0 & \dots & 0 \\
+0 & \sigma_{u_2}^2 & \dots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \dots & \sigma_{u_n}^2
+\end{bmatrix}
+\end{equation}
+
+The dataset vector, $\mathbf{d}$ has $m$ unique data points, and the experimental uncertainties are represented by $\mathbf{V}$, which is an $m \times m$ matrix. Similar to $\mathbf{M}$, the uncertainties are assumed uncorrelated, and therefore is diagonal:
+\begin{equation}
+    \mathbf{V} = 
+\begin{bmatrix}
+\sigma_{d_1}^2 & 0 & \dots & 0 \\
+0 & \sigma_{d_2}^2 & \dots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \dots & \sigma_{d_m}^2
+\end{bmatrix}
+\end{equation}
+
+The model precision matrix $W$ is determined by the equation
+\begin{equation}
+    W = G^T V^{-1} G
+    \label{eq:w-eq}
+\end{equation}
+in which $G$ is the sensitivity matrix, which is an $m \times n$ matrix. This matrix is made of elements $g_{ij}$, which represent the partial derivative of the theoretical model at the $j^{th}$ data point $t_j(\mathbf{U})$,  with the $i^{th}$ parameter $u_i$, or
+\begin{equation}
+    g_{ij} = \frac{\partial t_j(\mathbf{U})}{\partial u_i}
+\end{equation}
+
+Expanding Equation \ref{eq:w-eq} to solve for each element of $W$, then the element $w_{ik}$ is solved as
+\begin{equation}
+    w_{ik} = \sum_{j} \frac{1}{\sigma_{d_j}^2}\frac{\partial t_j(\mathbf{U})}{\partial u_i}\frac{\partial t_j(\mathbf{U})}{\partial u_k}
+\end{equation}
+
+The $\Delta \theta$ term requires an iterative solution due to the nonlinear nature of the theoretical models. At each iteration, $\Delta \theta$ is solved as the solution to the equation
+
+\begin{equation}
+    \Delta \theta = (M^{-1} + W)^{-1} y
+\end{equation}
+in which $y$ is calculated as
+\begin{equation}
+    y = G^{T}V^{-1} \left[ d - t(U) + G\Delta\theta \right]
+    \label{eq:y-eq}
+\end{equation}
+
+The iterative method is required due to the utilization of the $\Delta \theta$ term in Equation \ref{eq:y-eq}. This is mitigated by setting $\Delta \theta = 0$ for the first iteration, 
+\begin{equation}
+    y^{(0)} = G^T V^{-1}[\, d - t(U) \,]
+    \label{eq:y-first}
+\end{equation}
+The results from Equation \ref{eq:y-first} are then used to obtain the first $\Delta \theta$ iteration, from which the full Equation \ref{eq:y-eq} can be used on each subsequent iteration.
+
+One issue when applying this method to nuclear data is that the uncertainties and sensitivities of the parameters can vary significantly in magnitude. In order to address this, the data is normalized by a scaling matrix $S$, in which its elements are defined as
+\begin{equation}
+    S_{ii} = \frac{1}{\sqrt{(M^{-1} + W)_{ii}}}
+\end{equation}
+This scaling is then applied to $(M^{-1} + W)$ to produce the normalized matrix $\widetilde{M}$, with
+\begin{equation}
+    \widetilde{M} = S (M^{-1} + W) S
+\end{equation}
+
+The elements of $\widetilde{M}$ are given as
+\begin{equation}
+\widetilde{M}_{ij} = \frac{(M^{-1} + W)_{ij}}{\sqrt{(M^{-1} + W)_{ii}(M^{-1} + W)_{jj}}}
+\end{equation}
+The numerical values of $\widetilde{M}$ are bounded between $[-1,1]$, while the diagonal elements are all equal to 1. This produces improved numerical behavior.
+
+The scaled $\widetilde{M}$ is then used to determine a scaled update vector $\widetilde{z}$,
+\begin{equation}
+    \widetilde{z} = \widetilde{M}^{-1} (S\,y),
+\end{equation}
+The unscaled update parameter vector is then obtained from
+\begin{equation}
+    \Delta \theta = S \widetilde{z}
+\end{equation}
+and the unscaled updated covariance matrix is obtained via
+\begin{equation}
+    M' = S \widetilde{M}^{-1} S.
+\end{equation}
+
+Once a new $\mathbf{U}'$ is obtained, $W$, $y$, $G$, and $t(\mathbf{U}')$ are recalculated, and another $\Delta \theta$ is determined. This process continues until convergence, at which the final $\mathbf{U}'$ parameter vector best represents the experimental data while considering uncertainties.
+
+\section{The Parameter Vector $\mathbf{U}$}
