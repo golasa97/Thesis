@@ -19,7 +19,6 @@ in which the operator $\langle \cdot \rangle$ denotes an energy-averaged quantit
     \label{eq:energy-average-operator}
     \langle \cdot \rangle = \frac{1}{E_{1} - E_{0}} \int_{E_{0}}^{E_{1}} \cdot dE
 \end{equation}
-
 The energy-averaged transmission, $\langle T \rangle$, is given by:
 \begin{equation}
     \label{eq:energy-average-Transmission}
@@ -37,7 +36,6 @@ Because $\langle \sigma \rangle$ has to be constant over that energy region, tha
     \label{eq:taylor-series-step}
     \left\langle e^{-n \sigma(E)} \right\rangle = e^{-n \langle \sigma \rangle} \left\langle e^{-n \left( \sigma(E) - \langle \sigma \rangle \right)} \right\rangle
 \end{equation}
-
 The second term in \autoref{eq:taylor-series-step} can be approximated using a Taylor expansion:
 \begin{equation}
     e^{-n \left( \sigma(E) - \langle \sigma \rangle \right)} \approx 1 + n (\sigma(E) - \langle \sigma \rangle) + \frac{n^{2}}{2} (\sigma(E) - \langle \sigma \rangle)^2
@@ -52,7 +50,7 @@ This leads to the final approximation for $\langle T \rangle$:
     \langle T \rangle \approx e^{-n \langle \sigma \rangle} \left(1 + \frac{n^{2}}{2} \text{Var}(\sigma) \right) = e^{-n \langle \sigma \rangle} + \frac{n^{2}}{2} e^{-n \langle \sigma \rangle} \text{Var}(\sigma)
 \end{equation}
 
-Clearly, according to \autoref{eq:taylor-series-expansion}, as the variance in the cross-section increases, the self-shielding will increase.
+Clearly, according to \autoref{eq:taylor-series-expansion}, as the variance in the cross-section increases, the self-shielding will increase. Consequently, by accounting for variance in the cross-section, the self-shielding will be accounted for.
 
 \section{The Self-Shielding Correction Factor}
 \label{sec:correction-factor}
@@ -114,20 +112,20 @@ Since the true energy-differential cross section in the URR is unknown, and its 
 \subsection{The Single-Level Breit-Wigner (SLBW) Equation for Cross Section Reconstruction}
 \label{sec:slbw-for-sampling}
 
-The Single-Level Breit-Wigner (SLBW) approximation, typically used in the Resolved Resonance Region (RRR) for well-separated resonances, serves as the fundamental basis for reconstructing cross-section distributions from sampled resonance parameters in the URR. For a given channel $c$, the total SLBW cross section is determined as a sum over resonances $r$ via:
+The Single-Level Breit-Wigner (SLBW) approximation\cite{t2}, typically used in the Resolved Resonance Region (RRR) for well-separated resonances, serves as the fundamental basis for reconstructing cross-section distributions from sampled resonance parameters in the URR. For a given channel $c$, the total SLBW cross section\footnote{This isn't the \textit{total} total cross section as is generally referred to. Instead, it is the cross-section associated with forming a compound nucleus in a particular $J,\ell,\pi$ state, irrespective of the outgoing particle after the formation of that compound nucleus (neutron in the case of elastic scattering, $\gamma$-ray in the case of capture, etc). The incoming channel $c$ is used as shorthand for that $J,\ell,\pi$ state. The conventional \textit{total} total cross section is equivalent to summing over all possible channels.} is determined as a sum over resonances $r$ via:
 \begin{equation}
     \label{eq:slbw}
-    \sigma_c = \frac{ 4 \pi g_c}{k_c^2} \sum_r 
-        \left\{ \sin^2{\phi_c} + \frac{\Gamma_{n,r,c}}{\Gamma_{tot,r,c}}
-            \left( \psi \cos{2 \phi_c} + \chi \sin{2\phi_c}
+    \sigma_c = \frac{ 4 \pi g_c}{k_c^2} 
+        \left\{ \sin^2{\phi_c} + \sum_r \frac{\Gamma_{n,r,c}}{\Gamma_{tot,r,c}}
+            \left( \psi_r \cos{2 \phi_{c}} + \chi_r \sin{2\phi_c}
             \right)
         \right\}
 \end{equation}
-The incoming channel $c$ corresponds to a unique combination of $J,\ell,\pi$ quantum numbers. The statistical spin factor, $g_c$ is defined as
+The statistical spin factor, $g_c$ is defined as
 \begin{equation}
     g_c = \frac{2J + 1}{2(2I + 1)}
 \end{equation}
-in which $I$ is the spin of the target nucleus, and $J$ is the spin associated with channel $c$. $\phi_c$ is the hard-sphere scattering phase shift of a particular channel\cite{t2}.
+in which $I$ is the spin of the target nucleus, and $J$ is the spin associated with channel $c$. $\phi_c$ is the hard-sphere scattering phase shift of a particular channel.
 
 $\psi$ and $\chi$ are the Doppler broadened resonance profiles. Those are determined by using the Faddeeva function\cite{algo-916}, such that
 \begin{equation}
@@ -148,7 +146,16 @@ and $w(\alpha,\beta)$ is defined as
     w(\alpha,\beta) = \frac{i}{\pi} \int_{-\infty}^{\infty} \frac{e^{-t^2}}{\alpha + i\beta - t}dt
 \end{equation}
 
-The total microscopic cross section for a given nuclide at a specific energy is then determined by summing the contributions from all possible incoming channels $c$. Each channel corresponds to a unique set of quantum numbers (spin, orbital angular momentum, and parity) that contribute to the reaction. The detailed determination of all possible channel states will be elaborated in a later section. It is crucial to note that this SLBW formulation, as presented, presumes that the individual resonance parameters ($E_r$, $\Gamma_{n,r}$, and $\Gamma_{tot,r}$, for each resonance $r$) are precisely known. However, in the URR, these individual parameters are not experimentally resolved. Instead, only their \textit{average} values and statistical distributions are known. This discrepancy necessitates the use of statistical sampling techniques to generate instances of these resonance parameters from their average values and distributions, which then allows for the reconstruction of fluctuating cross sections using the SLBW equation.
+The total microscopic cross section for a given nuclide at a specific energy is then determined by summing the contributions from all possible incoming channels $c$. Each channel corresponds to a unique set of quantum numbers (spin, orbital angular momentum, and parity) that contribute to the reaction. The other relevant reaction cross sections for a given channel can also be calculated from these parameters. The capture cross section:
+\begin{equation}
+    \sigma_{c,\gamma} =  \frac{ 4 \pi g_c}{k_c^2}  \sum_r \frac{\Gamma_{n,r,c} \Gamma_{\gamma,r,c}}{\Gamma_{r,tot}^2} \psi_r
+\end{equation}
+And the fission cross section is nearly identical:
+\begin{equation}
+    \sigma_{c,\gamma} =  \frac{ 4 \pi g_c}{k_c^2}  \sum_r \frac{\Gamma_{n,r,c} \Gamma_{f,r,c}}{\Gamma_{r,tot}^2} \psi_r
+\end{equation}
+
+The determination of all possible channel states will be elaborated in a later section. It is crucial to note that this SLBW formulation, as presented, presumes that the individual resonance parameters ($E_r$, $\Gamma_{n,r}$, and $\Gamma_{tot,r}$, for each resonance $r$) are precisely known. However, in the URR, these individual parameters are not experimentally resolved. Instead, only their \textit{average} values and statistical distributions are known. This discrepancy necessitates the use of statistical sampling techniques to generate instances of these resonance parameters from their average values and distributions, which then allows for the reconstruction of fluctuating cross sections using the SLBW equation.
 
 \subsection{Sampling Cross-Sections from Average Parameters}
 \label{sec:sampling-parameters}
@@ -156,6 +163,7 @@ The total microscopic cross section for a given nuclide at a specific energy is 
 
 The procedure for generating a statistical realization of the cross section over a given energy range involves several steps, iterated across different channels and multiple times to build a comprehensive distribution. For each given channel $c$, defined by a unique $(\ell, J, \pi)$ combination, a ladder of resonance energies is determined. This is done by sampling from the Wigner Distribution, in which
 \begin{equation}
+    \label{eq:wigner=distribution}
     P(s) = \frac{s\pi}{2 \langle D \rangle_c^2} e^{-\frac{\pi s^2}{4 \langle D \rangle_c^2}}
 \end{equation}
 where $\langle D \rangle_c$ is the average level spacing associated with that channel $c$, and $s$ is the sampled level spacing. This is used to produce a resonance ladder
@@ -166,16 +174,17 @@ where $\langle D \rangle_c$ is the average level spacing associated with that ch
 The following step is to sample neutron widths for each channel and resonance energy.
 
 \begin{equation}
-    \Gamma_{n,r,c} = P\left( \frac{\Gamma_{n,c}^0}{\langle \Gamma_{n,c}^0  \rangle}\right)\langle \Gamma_{n,c}^0  \rangle \nu_c(E_r) \sqrt{E_r}
+    \label{eq:porter-thomas}
+    \Gamma_{n,r,c} = P\left( \frac{\Gamma_{n,c}}{\langle \Gamma_{n,c}  \rangle}\right)\langle \Gamma_{n,c}  \rangle
 \end{equation}
-in which $\langle \Gamma_{n,c}^0  \rangle$ is the reduced neutron width, $\nu_c$ is the penetrability of channel $c$, and $P\left( \Gamma_{n,c}^0 / \langle \Gamma_{n,c}^0  \rangle \right)$ is the Porter-Thomas distribution, where:
+in which $\langle \Gamma_{n,c}  \rangle$ is the average neutron width for that channel, and $P\left( \Gamma_{n,c} / \langle \Gamma_{n,c}  \rangle \right)$ is the Porter-Thomas distribution, where:
 \begin{equation}
     P(x) = \frac{e^{-x/2}}{\sqrt{2\pi x}}
 \end{equation}
 
-The total resonance width is determined as a sum over the neutron width plus the other possible channels, i.e., radiation width and fission width:
+Once a neutron width for that channel is sampled, the total resonance width is determined. This is done as a sum over the neutron width plus the other possible channels, i.e., radiation width, fission width, and inelastic width:
 \begin{equation}
-    \Gamma_{tot,r,c} = \Gamma_{n,r,c} + \Gamma_{\gamma,r,c} + \Gamma_{f,r,c}
+    \Gamma_{tot,r,c} = \Gamma_{n,r,c} + \Gamma_{n',r,c} + \Gamma_{\gamma,r,c} + \Gamma_{f,r,c}
 \end{equation}
 
 These sampled parameters are processed via the steps described in \autoref{sec:slbw-for-sampling} to be input into \autoref{eq:slbw} and generate a cross section for that given channel $c$. This process is repeated for all possible channels to provides a single realization of the total cross section for a given set of average parameters:
@@ -184,6 +193,6 @@ These sampled parameters are processed via the steps described in \autoref{sec:s
 \end{equation}
 Finally, this is repeated some $N$ number of realizations to produce a population of sampled cross sections, $\{ \sigma_{tot}^1, \sigma_{tot}^2, \ldots, \sigma_{tot}^{N} \}$. This set of sampled cross sections, if defined using accurate average parameters over some statistical number of resonances, will accurately reproduce the true variance in the energy-differential cross section over some energy bin.
 
-This is the general procedure of how nuclear data processing codes (NJOY, FRENDY, AMPX) account for self-shielding in the URR. Self-shielding due to cross section variance from resonant fluctuations can therefore be accurately modeled strictly from average parameters.
+This is the general procedure of how nuclear data processing codes (NJOY\cite{njoy}, FRENDY\cite{frendy}, AMPX\cite{scale2024manual}) simulate cross-section variance required to account for self-shielding in the URR. Self-shielding due to cross section variance from resonant fluctuations can therefore be accurately modeled strictly from average parameters.
 
 Note, this only addresses total cross section. It does not mention partial cross sections, interpreting between parameters to be used in \autoref{eq:hauser-feshbach-cross-section} and \autoref{eq:slbw}, energy dependencies, or any approximations. Those details are implementation-specific, and will be discussed in subsequent chapters.
