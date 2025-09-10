@@ -262,3 +262,53 @@ These quantities are then used to calculate the capture correction factor,
 which can then be used in \autoref{eq:correction-thin-sample-approximation} to estimate the energy averaged capture yield $\langle Y \rangle$. 
 
 It should be noted that the average capture cross section $\langle \overline{\sigma_{\gamma}} \rangle$ calculated from \autoref{eq:avg-capture-xs} and $\langle \sigma_{\gamma} \rangle$ are not necessarily the same quantity. The $\langle \overline{\sigma_{\gamma}} \rangle$ is computed via Monte Carlo simulation, while $\langle \sigma_{\gamma} \rangle$ from \autoref{eq:correction-thin-sample-approximation} is calculated analytically.
+
+\section{SESH Improvements}
+    \subsection{Energy Deposition Improvement}
+        Originally in SESH, there was a very simple approximation for sampling what energy an interaction occurred at. It was assumed that every neutron lost the average scattering energy per collision, independent of scattering angle, i.e.,
+        \begin{equation}
+            E' = E \left[ 1 - \frac{2A}{\left( 1 + A \right)^2} \right]
+        \end{equation}
+        for all post-collision neutrons. This enabled all of the energy dependent parameters that did not get sampled using the Monte Carlo method to be pre-calculated efficiently. However, it was assumed this would be an insufficient approximation for thick samples in which many collisions were expected.
+        
+        This was substituted with an angle-dependent energy sampling procedure. The scattering angle of each post collision neutron would be sampled assuming an isotropic scattering distribution, and the post collision energy would be calculated as a function of the scattering angle,
+        \begin{equation}
+            E' = E \frac{A^2 + 2 A \mu_c + 1}{\left( A + 1 \right)^2}
+        \end{equation}
+        in which
+        \begin{equation}
+            \mu_c = \cos\phi_c
+        \end{equation}
+        where $\phi_c$ is the exit angle of the post-collision neutron in the center-of-mass system.
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/multiple_scattering.png}
+            \caption{Distribution of neutrons after each collision using the old SESH post-collision energy sampling method and the new angle-dependent sampling in a 12mm \textsuperscript{181}Ta sample at 3keV initial incident energy.}
+            \label{fig:multiple-scattering}
+        \end{figure}
+
+    \subsection{Incident Neutron Location Error}
+
+    SESH had an observed problem in which as the radius of the neutron beam size increased past some value relative to the total sample surface, it would fail at some point in the calculation. This ended up being attributable to an implementation error in algorithm for calculating the initial location for which the neutron is incident on the sample. Specifically, memory errors would be observed when $r_{sample}/r_{beam} \leq \sqrt{2}$.
+
+    After some investigation, it was determined that the incident neutron location algorithm was implemented as
+    \begin{align*}
+        x &= R\sqrt{\zeta}, \qquad y=R\sqrt{\zeta} \\
+    \end{align*}
+    Consequently, rather than the intended circular beam with uniform probability the distribution was a non-uniform, square beam. This was replaced with an improved sampling algorithm which correctly sampled across the face of the cylinder. A comparison between the original and improved algorithms is shown in \autoref{fig:loc-sampling-2d-comparison}.
+    \begin{figure}[h]
+        \centering
+        \begin{adjustbox}{width=1.2\textwidth, center}
+            \includegraphics{Capture Yield/Figures/sampling_2d_comparison.png}
+        \end{adjustbox}
+        \caption{Comparing the observed distribution of sampled neutron incident locations across the face of a cylindrical target from original SESH algorithm versus the new implementation}
+        \label{fig:loc-sampling-2d-comparison}
+    \end{figure}
+    Not only was this a headache to deal with, but the non-uniform distribution had the potential to under-estimate the correction factor. Neutrons sampled as interacting closer to the edges are less likely to experience significant multiple scattering events.
+
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/sampling_1d_comparison.png}
+        \caption{Comparison between improved and original algorithm regards to sampled radius}
+        \label{fig:sampling-1d-comparison}
+    \end{figure}

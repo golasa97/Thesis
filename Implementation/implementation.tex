@@ -17,17 +17,24 @@ This was converted into the \textit{true} average cross section by use of the co
 
 Once new parameters were obtained, they were used to calculate a new correction factor. This was then used to obtain a new `corrected' cross section, and a new fit was performed, producing new resonance parameters. This process was repeated until the resonance parameters converged onto a final value.
 
-The implementation described in the following sections integrates the self-shielding correction capabilities of SESH directly into SAMMY’s fitting engine. This creates a new, streamlined workflow where the evaluator provides the actual measurement data—such as average transmission or capture yield—directly to the code. SAMMY now internally calculates the necessary self-shielding correction factors during each iteration, directly comparing the theoretical values to the experimental observable.
+The implementation described in the following sections integrates the self-shielding correction capabilities of SESH directly into SAMMY’s fitting engine. This creates a new, streamlined workflow where the evaluator provides the actual measurement data—such as average transmission or capture yield—directly to the code. SAMMY now internally calculates the necessary self-shielding correction factors during each iteration, directly comparing the theoretical values to the experimental observable. The new and improved workflow is shown in \autoref{fig:current-workflow}.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{Implementation/Figures/improved-workflow.png}
+    \caption{Current SAMMY workflow for processing self-shielded URR data}
+    \label{fig:current-workflow}
+\end{figure}
 
 While the code SESH was used to provide a blueprint for performing self-shielding corrections, its implementation into SAMMY required a near-total rewrite of the original code. This overhaul was required in order to modernize SESH's interface such that it integrated cleanly into SAMMY, resolve bugs that had been propagated through SESH's development history, and improve the physics models such that:
 \begin{enumerate}
-    \item approximations which significantly impacted results were removed
+    \item Approximations which significantly impacted results were removed
     \item SESH and SAMMY utilize the same underlying physics models, ensuring consistency throughout the code.
 \end{enumerate}
 
 The following sections will discuss software refactoring (bug fixes, improved physics models) required to perform the self-shielding corrections in order to accomplish these goals. The specific theoretical measurement validation will be discussed in their respective chapters, as will the fitting procedure.
 
 \section{URR Representation in SAMMY}
+\label{sec:urr-in-sammy}
 
 The average cross section in the URR is typically defined according to Hauser-Feshbach theory, which provides a framework for describing nuclear reactions proceeding through a compound nucleus when many channels are open and individual resonance effects are smeared out. The energy-averaged total cross section for an incoming channel $c$ can be expressed as:
 
@@ -246,7 +253,7 @@ This observed width was collected into a set and compared to the sampled values 
 
 As shown in \autoref{fig:weighted-wigner} Fr\"{o}hner's implementation of the weighted Wigner distribution successfully replicates the distribution of observed widths when weighting according to energy, and can be used to accelerate the sampling routine without a loss of accuracy.
 
-\section{Doppler Broadening Bug}
+\section{Doppler Broadening}
 
 When testing SESH theoretical values, there was an observed disagreement in cross-section variance at higher energies for capture cross sections.
     The primary cause of the disagreement was determined to be the result of an error in the Doppler broadening subroutine that was originally present in SESH. In order to perform the Doppler broadening, the complex error function, also known as the Faddeeva function, is utilized. The issue was in the original algorithm, in cases where $\beta$ was less than 0.01. Recall that
@@ -260,34 +267,41 @@ When testing SESH theoretical values, there was an observed disagreement in cros
     \end{equation}
 
     In instances where $\beta \leq 0.01$, the algorithm would incorrectly return the 0 Kelvin value for the $\psi$ parameter, shown in \autoref{fig:beta-error}.
-    \begin{figure}
+    \begin{figure}[h]
         \centering
-        \includegraphics[width=0.95\linewidth]{Implementation/Figures/beta-error.png}
+        \includegraphics[width=0.75\linewidth]{Implementation/Figures/beta-error.png}
         \caption{Comparing results of SESH's Faddeeva function output with what the Faddeeva function actually calculates given the same inputs.}
         \label{fig:beta-error}
     \end{figure}
     
     One significant effect of this bug is due to the inverse relationship between $\beta$ and energy, shown in \autoref{eq:doppler-beta}. As the energy of the incident neutron increases, the probability of $\beta$ being sampled as less than 0.01 increases. Consequently, as energy increases, the probability of the 0 Kelvin cross section being returned also increased.
 
-\section{Energy Deposition Improvement}
-    Originally in SESH, there was a very simple approximation for sampling what energy an interaction occurred at. It was assumed that every neutron lost the average scattering energy per collision, independent of scattering angle, i.e.,
-    \begin{equation}
-        E' = E \left[ 1 - \frac{2A}{\left( 1 + A \right)^2} \right]
-    \end{equation}
-    for all post-collision neutrons. This enabled all of the energy dependent parameters that did not get sampled using the Monte Carlo method to be pre-calculated efficiently. However, it was assumed this would be an insufficient approximation for thick samples in which many collisions were expected.
-    
-    This was substituted with an angle-dependent energy sampling procedure. The scattering angle of each post collision neutron would be sampled assuming an isotropic scattering distribution, and the post collision energy would be calculated as a function of the scattering angle,
-    \begin{equation}
-        E' = E \frac{A^2 + 2 A \mu_c + 1}{\left( A + 1 \right)^2}
-    \end{equation}
-    in which
-    \begin{equation}
-        \mu_c = \cos\phi_c
-    \end{equation}
-    where $\phi_c$ is the exit angle of the post-collision neutron in the center-of-mass system.
-    \begin{figure}
+    The solution was to implement a newer computation of the Faddeeva function\cite{faddeeva}. This resolved the issues present in the original algorithm present in SESH, but also reduced error of the function at all values of $\beta$, shown in \autoref{fig:faddeeva-algorithm}.
+    \begin{figure}[H]
         \centering
-        \includegraphics[width=0.95\linewidth]{Implementation/Figures/multiple_scattering.png}
-        \caption{Distribution of neutrons after each collision using the old SESH post-collision energy sampling method and the new angle-dependent sampling in a 12mm \textsuperscript{181}Ta sample at 3keV initial incident energy.}
-        \label{fig:multiple-scattering}
+        \includegraphics[width=0.75\textwidth]{Implementation/Figures/DopplerBroadenedBeta.png}
+        \caption{Faddeeva function error for old and new algorithms as a function of $\beta$.}
+        \label{fig:faddeeva-algorithm}
     \end{figure}
+
+\section{Cross-Section Validation}
+    \label{sec:cross-section-validation}
+    After the comprehensive refactoring of the SESH code, it was necessary to validate its performance in calculating cross-section distributions. The goal was to ensure that the updated SESH could accurately reproduce cross-section distributions from the same set of resonance parameters.
+
+    In order to perform this validation, the cross-section distribution of \textsuperscript{90}Zr at 200 keV was generated by SESH and FRENDY\cite{frendy}. Rather than using the \textsuperscript{90}Zr ENDF-8.1 evaluation for the FRENDY calculation, the ENDF file used by FRENDY was generated using SAMMY from the URR parameters described in \autoref{sec:urr-in-sammy}. This created a direct one-to-one comparison between models, such that the resonance parameters did not contribute to any discrepancy between the generated distributions. Further information regarding this step is discussed in greater detail in \autoref{chap:multi-isotope-simulation}.
+
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=0.95\linewidth]{Implementation//Figures/cross-section-validation.png}
+        \caption{Validating SESH-calculated total cross-section generation with FRENDY calculation using identical resonance parameters}
+        \label{fig:cross-section-validation}
+    \end{figure}
+
+    The comparison between the FRENDY-calculated and SESH-calculated total cross section distributions is given in \autoref{fig:cross-section-validation}. As the figure illustrates, there is very strong agreement throughout the entire distribution. This demonstrates that the underlying statistical behavior of the cross-sections are being modeled correctly.
+
+    This agreement serves as validation of the new SESH implementation, confirming its physical accuracy by verifying two crucial aspects of its cross section generation:
+    \begin{enumerate}
+        \item \textbf{SESH and SAMMY are internally consistent.} This validation required calculating average channel-dependent parameters from $\ell$-dependent parameters. The identical distribution reflects that the channel-dependent parameters are consistent between code workflows.
+        \item \textbf{SESH's Monte Carlo cross-section sampling is identical to current processing codes.} This validates the core functionality of SESH's cross-section sampling. Although the doppler broadening subroutines and weighted Wigner distribution are significantly different implementations from processing codes, SESH is able to return an identical total cross-section distribution.
+    \end{enumerate}
+
