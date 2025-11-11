@@ -1,0 +1,70 @@
+%\section{Uncertainty Quantification in the URR}
+
+A significant challenge in the evaluation of URR parameters is the determination of realistic parameter uncertainties. The requirement to fit average resonance parameters to energy-averaged measurements, which can combine hundreds or thousands of data points, produces exceptionally small statistical uncertainties. If unmodified, these exceptionally small uncertainties will produce unrealistically small parametric uncertainties in an evaluation, and evaluators must artifically increase parametric uncertainties in order to properly reflect accurate theoretical uncertainties in integral and differential benchmarks\cite{rh103}. This practice, while pragmatic, is obviously not ideal and indicates that a significant source of uncertainty is being systematically missed in URR evaluations.
+
+One of the most significant sources of this missing uncertainty is the model uncertainty associated with self-shielding corrections. Currently, there is no established methodology to tackle the uncertainty quantification associated with self-shielding corrections\cite{templates}. The uncertainty associated with the self-shielding correction is attributable to finite resonance sampling effects. This is a consequence of the fact that any energy bin over which data is averaged contains only a finite number of resonances. This limited sample is not necessarily representative of the true, continuous distributions of the Wigner and Porter-Thomas distributions that dictate neutron resonance statistics. The deviation between the true, finite sample of resonance in an energy bin and the ideal distributions introduces a quantifiable uncertainty that has been unaccounted for in previous evaluations.
+
+The ultimate goal is to propose a method for incorporating this new self-shielding modeling uncertainty component into the evaluation procedure, in order to determine more realistic and physically meaningful uncertainty estimates on the final evaluated parameters. In order to accomplish this, a representative case for $^{181}$Ta will be generated using robust R-Matrix theory, which will then be used to validate that the computationally efficient SLBW equations can accurately reproduce self-shielding uncertainty. These generated uncertainties will be combined with given experimental uncertainties in order to produce parameters with realistic and meaningful uncertainties.
+
+
+\section{Self-Shielding Correction Limitations}
+    
+There are two assumptions regarding correcting for self-shielding of an average cross section over some energy range:
+\begin{enumerate}
+    \item There are a statistical number of resonances in an energy bin.
+    \item The energy bin is narrow enough such that any energy dependence can be ignored\cite{wpec-15}.
+\end{enumerate}
+These assumptions can be valid for sufficiently statistical nuclei (i.e., the self-shielding model uncertainty is negligible), but for some cases, both assumptions cannot be met simultaneously.
+
+The finite resonance effect is a consequence of imperfect statistical sampling. Any real-world energy-bin contains a finite resonance ladder which represents a single statistical realization from the Porter-Thomas and Wigner distributions with a limited number of resonances. As the energy bin increases in size and the number of sampled resonances increases, the sampled distribution will more closely agree with the theoretical distributions. However, the bin size can only increase so much before violating the energy-independence requirement.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.85\linewidth]{Uncertainty Quantification/Figures/ta181-gn0-convergence.png}
+    \caption{Convergence of the observed average s-wave reduced neutron width $(\Gamma_n^0)$ as sampled bin-size increases for $^{181}$Ta. The sampled average (blue line) approaches the true average (dashed line) as more resonances are included.}
+    \label{fig:ta181-gn0-convergence}
+\end{figure}
+
+\autoref{fig:ta181-gn0-convergence} illustrates the statistical convergence of sampled resonances as the energy bin increases over the most recent ENDF-8.1 $^{181}$Ta evaluation\cite{endf-8.1}. One important feature is due to the nature of the Porter-Thomas distribution, which heavily skews towards sampling many small resonances, and few large ones. A small, unrepresentative energy bin might only contain small resonances, and significantly underestimate the average reduced width. Conversely, the inclusion of one large resonance in a small energy bin will significantly over estimate the average reduced width.
+
+The average level spacing determines how wide an energy bin has to be in order to ensure convergence. While the relatively large S-wave $\langle \Gamma_n^0\rangle$ in $^{181}$Ta causes large fluctuations in its observed average, this is counteracted by a small average level spacing (4.1 eV). Consequently, a relatively narrow bin size can include hundreds of resonances, ensuring it satisfies both the statistical and energy-independence assumptions.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{Uncertainty Quantification/Figures/zr-xs-binsize-comparisons.png}
+    \caption{Total Cross-Section of $^{90}$Zr, grouped over increasingly coarse energy bins.}
+    \label{fig:zr90-xs-binsize-comparisons}
+\end{figure}
+
+In contrast to the well-behaved nature of $^{181}$Ta, nuclides with large average level spacing, such as $^{90}$Zr, present a significant challenge where the two primary assumptions for self-shielding corrections are in direct conflict.  With an average s-wave level spacing of approximately 8.6 keV, achieving the same level of statistical convergence seen in \autoref{fig:ta181-gn0-convergence} would require an energy bin of roughly 1.7 MeV.
+
+This conflict is illustrated in \autoref{fig:zr90-xs-binsize-comparisons} for which the bin size is varied over the cross-section obtained by Musgrove, et al\cite{Musgrove1977}. The top panel, with a relatively fine 10 keV binning, displays the underlying resonant structure. As the bin width is increased to 100 keV and 500 keV, this structure is progressively averaged out. Not only does the bin size remain insufficiently statistical, the coarsest grid size obscures important energy-dependent features which are essential to the evaluation that will be discussed in \autoref{chap:evaluation}. This means that for proper uncertainty quantification and parameter fitting for $^{90}$Zr, the self-shielding correction uncertainty must be accounted for.
+
+\section{Self-Shielding Model Uncertainty Quantification Method}
+This section outlines the procedure used to quantify the model uncertainty from the finite resonance effect. The goal is to simulate the statistical nature of the URR to determine the inherent variance in the self-shielding correction factor, $C_T$.
+
+The core of the method involves generating a large number of realizations of the URR cross-section which matches the resonance statistics of $^{181}$Ta. Each realization is a unique, physically plausible resonance ladder created by sampling resonance energies and widths from the Wigner and Porter-Thomas distributions, respectively. This process creates thousands of different versions of the URR cross-section, all of which are consistent with the same set of average resonance parameters. The realized resonance ladders were generated with the same sampling techniques described in \autoref{sec:sampling-parameters} to obtain the resonance energies, $E_r$, and the reduced withs, $\Gamma_n^0$. The generated resonance ladder for each realization was then fed into the R-Matrix cross-section calculation portion of SAMMY in order to generate a high-fidelity, pointwise cross-section for each realization.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{Uncertainty Quantification//Figures/simulated-ta181-urr.png}
+    \caption{A complete view of one realization of $^{181}$Ta, including the RR. The red vertical line indicates the beginning of generated resonances to replace the original URR.}
+    \label{fig:ta181-simulated-urr}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Uncertainty Quantification/Figures/sampled-ta181-xs.png}
+        \caption{The pointwise sampled cross-section the given realization.}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Uncertainty Quantification/Figures/sampled-ta181-trans.png}
+        \caption{The pointwise, sampled 3mm and 6mm transmissions for the given realization.}
+    \end{subfigure}
+    \caption{A single realization of $^{181}$Ta resonances over the range 3.0 to 3.1 keV.}
+\end{figure}
+
+For each of the generated cross section realizations, the corresponding pointwise transmission, $T(E)$ is calculated for three separate sample thicknesses: 3mm, 6mm, and 12mm. 

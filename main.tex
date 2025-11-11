@@ -10,6 +10,7 @@
 \usepackage{enumitem}
 \usepackage{multirow}
 \usepackage{adjustbox}
+\usepackage{subcaption}
 
 
 \makeatletter
@@ -21,6 +22,23 @@
 }}
 \newcommand{\smash@bar}[4]{%
   \smash{\rlap{\raisebox{-#3\fontdimen5#10}{$\m@th#2\mkern#4mu\mathchar'26$}}}%
+}
+\makeatother
+
+\makeatletter
+\newcommand{\saveequation}[2]{% #1 = label, #2 = math
+  #2 \label{#1}
+  \protected@write\@mainaux{}{\string\SAVEEQUATION{#1}{\unexpanded{\unexpanded{#2}}}}%
+}
+\newcommand{\SAVEEQUATION}[2]{%
+  \global\@namedef{SAVEDEQUATION@#1}{#2}%
+}
+\newcommand{\repeatequation}[1]{%
+  \ifcsname SAVEDEQUATION@#1\endcsname
+    \@nameuse{SAVEDEQUATION@#1}\tag{\ref{#1}}%
+  \else
+    ?? \notag
+  \fi
 }
 \makeatother
 
@@ -76,25 +94,29 @@
 
 \chapter{Transmission Correction}
 \label{chap:transmission-correction}
-%\input{Transmission Correction/transmission-correction}
+\input{Transmission Correction/transmission-correction}
 
 \chapter{Capture Yield Correction}
 \label{chap:capture-yield-correction}
-%\input{Capture Yield/capture-yield}
+\input{Capture Yield/capture-yield}
 
 \chapter{Multi-Isotope Simulation}
 \label{chap:multi-isotope-simulation}
 %\input{Multi Isotope/multi-isotope}
 
-\chapter{Fitting URR Parameters}
-\label{chap:fitting}
+%\chapter{Fitting URR Parameters}
+%\label{chap:fitting}
 %\input{Fitting/fitting}
+
+\chapter{Self-Shielding Uncertainty Quantification}
+\label{chap:uncertainty}
+\input{Uncertainty Quantification/Uncertainty Quantification}
 
 
 
 \chapter{Evaluation}
 \label{chap:evaluation}
-%\input{Evaluation/evaluation}
+\input{Evaluation/evaluation}
 
 \chapter{Conclusion}
 \label{chap:conclusion}

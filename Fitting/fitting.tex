@@ -1,20 +1,38 @@
+The previous chapters demonstrated SAMMY's new ability to calculate theoretical values for self-shielded transmission and capture yield measurements, including multi-isotope samples. This chapter will discuss the numerical procedure used to fit these theoretical values to data, in order to determine the most likely set of URR parameters and their corresponding uncertainties.
+
+The fitting procedure implemented is an inverse Bayesian method called the $M+W$ method. A version of the $M+W$ method exists in SAMMY already but was highly inflexible, and extending the multi-isotope fitting required a complete rewrite of the $M+W$ method in C++ using the Eigen linear algebra library.
+
+Not only was the parameter flexibility improved to handle multi-isotope fitting, but the new $M+W$ framework significantly improves how the data and parameter covariances are handled. This chapter will derive the $M+W$ Bayesian fitting equations and outline their improved functionality.
+
+
 \section{M+W Bayesian Fitting}
 
-The goal of this fitting method is to determine a set of parameters that best describes a set of experimental measurements. Given an initial parameter vector $\mathbf{U}$, each element of which has a given prior covariance $M$, we seek to find an updated parameter vector $\mathbf{U}'$ which reduces the discrepancy between theoretical predictions, $\mathbf{t}(\mathbf{U}')$, and experimental data, $\mathbf{d}$.
+The fundamental goal of this fitting procedure is to determine the set of parameters that best describes a set of experimental measurements. We begin with an initial parameter vector, $\bar{P}$, and its associated uncertainty, described by the prior covariance matrix $M$. The objective is to find an updated parameter vector, $\bar{P}'$, which minimizes the discrepancy between the theoretical predictions, $T(\bar{P}')$, and the experimental data, $D$.
 
-This is done by performing a Bayesian least-squares optimization, using a method called $M+W$. The $M+W$ method determines the parameter vector $\mathbf{U}'$ as determined as a sum between the original parameter vector $\mathbf{U}$ plus a correction term $\Delta \theta$,
+The M+W fitting equations are derived directly from Bayes' Theorem. The primary constraint to this method is that it assumes a linear system. However, the theoretical models for cross-section, transmission, and capture-yield are all characteristically nonlinear. This nonlinearity is accounted for by using an iterative approach, which is discussed in further detail in a following section.
+
+For reasons of numerical stability and to better handle physical constraints, the fitting algorithm does not operate directly on the "physical" parameters, $P$, (e.g., strengths $S_\ell$). Instead, these are often converted to a set of internal "fitting" parameters, $\mathbf{U}$. This transformation is done to make the values more linear, therefore reducing the non-linearity of the equations. The particular forms of the $u$ parameters will be given in a later section.
+
+
+
+
+
+
+
+
+The fitting process determines the updated parameter vector, $\mathbf{U}'$, as the sum of the original vector, $\mathbf{U}$, and a correction term, $\Delta \theta$:
 \begin{equation}
     \mathbf{U}' = \mathbf{U} + \Delta \theta
 \end{equation}
-and the updated covariance $\mathbf{M}'$ as
+The corresponding updated covariance matrix, $M'$, is given by:
 \begin{equation}
     M' = \left(M^{-1} + W\right)^{-1}
 \end{equation}
-in which $W$ represents the "model precision". The following will describe how to obtain the $\Delta \theta$ and $W$ terms.
+where $W$ represents the "model precision" matrix. The following derivation describes how the correction term $\Delta \theta$ and the matrix $W$ are obtained.
 
-Starting with $n$ parameters, the prior covariance matrix $\mathbf{M}$, which is an $n\times n$ matrix. It is assumed that the parameter uncertainties are uncorrelated, such that $\mathbf{M}$ is a diagonal matrix,
+To do this, we first define the components of the system. Starting with $n$ fitting parameters in the vector $\mathbf{U}$, the prior covariance matrix $M$ is an $n \times n$ matrix describing their initial uncertainties. In many cases, these are assumed to be uncorrelated, making $M$ a diagonal matrix:
 \begin{equation}
-    \mathbf{M} = 
+    M = 
 \begin{bmatrix}
 \sigma_{u_1}^2 & 0 & \dots & 0 \\
 0 & \sigma_{u_2}^2 & \dots & 0 \\
@@ -23,9 +41,9 @@ Starting with $n$ parameters, the prior covariance matrix $\mathbf{M}$, which is
 \end{bmatrix}
 \end{equation}
 
-The dataset vector, $\mathbf{d}$ has $m$ unique data points, and the experimental uncertainties are represented by $\mathbf{V}$, which is an $m \times m$ matrix. Similar to $\mathbf{M}$, the uncertainties are assumed uncorrelated, and therefore is diagonal:
+The experimental dataset is contained in a vector $\mathbf{D}$ with $m$ data points, with uncertainties described by the $m \times m$ data covariance matrix $V$. If the data uncertainties are uncorrelated, $V$ is also diagonal:
 \begin{equation}
-    \mathbf{V} = 
+    V = 
 \begin{bmatrix}
 \sigma_{d_1}^2 & 0 & \dots & 0 \\
 0 & \sigma_{d_2}^2 & \dots & 0 \\
@@ -34,67 +52,146 @@ The dataset vector, $\mathbf{d}$ has $m$ unique data points, and the experimenta
 \end{bmatrix}
 \end{equation}
 
-The model precision matrix $W$ is determined by the equation
+The model precision matrix $W$ connects the parameter space to the data space via the sensitivity matrix (or Jacobian), $G$:
 \begin{equation}
     W = G^T V^{-1} G
-    \label{eq:w-eq}
 \end{equation}
-in which $G$ is the sensitivity matrix, which is an $m \times n$ matrix. This matrix is made of elements $g_{ij}$, which represent the partial derivative of the theoretical model at the $j^{th}$ data point $t_j(\mathbf{U})$,  with the $i^{th}$ parameter $u_i$, or
+The elements $G_{ij}$ of the $m \times n$ sensitivity matrix are the partial derivatives of the $j^{th}$ theoretical data point, $T_j$, with respect to the $i^{th}$ fitting parameter, $u_i$:
 \begin{equation}
-    g_{ij} = \frac{\partial t_j(\mathbf{U})}{\partial u_i}
+    G_{ij} = \frac{\partial T_j(\mathbf{U})}{\partial u_i}
+\end{equation}
+Expanding the equation for $W$, each element $w_{ik}$ is calculated as:
+\begin{equation}
+    w_{ik} = \sum_{j=1}^{m} \frac{1}{\sigma_{d_j}^2}\frac{\partial T_j(\mathbf{U})}{\partial u_i}\frac{\partial T_j(\mathbf{U})}{\partial u_k}
 \end{equation}
 
-Expanding Equation \ref{eq:w-eq} to solve for each element of $W$, then the element $w_{ik}$ is solved as
+The correction term $\Delta \theta$ is then found by solving the system:
 \begin{equation}
-    w_{ik} = \sum_{j} \frac{1}{\sigma_{d_j}^2}\frac{\partial t_j(\mathbf{U})}{\partial u_i}\frac{\partial t_j(\mathbf{U})}{\partial u_k}
+    \Delta \theta = (M^{-1} + W)^{-1} \mathbf{y}
+\end{equation}
+The final step is to solve for the vector $\mathbf{y}$. It is in the definition of $\mathbf{y}$ that the non-linearity of the model is addressed. Since $\mathbf{y}$ is a function of the very $\Delta\theta$ it is being used to calculate, a direct solution is not possible.
+\begin{equation}
+    \mathbf{y} = G^{T}V^{-1} \left[ \mathbf{D} - \mathbf{T}(\mathbf{U}) + G\Delta\theta \right]
+\end{equation}
+Instead, an iterative approach is employed. The process begins with an initial guess, typically assuming no correction is needed, i.e., $\Delta\theta^{(0)} = 0$. This allows for the calculation of the initial $\mathbf{y}$ vector for the first iteration ($k=0$):
+\begin{equation}
+    \mathbf{y}^{(0)} = G^{T}V^{-1} \left[ \mathbf{D} - \mathbf{T}(\mathbf{U})\right]
+\end{equation}
+This initial vector is then used to find the first updated correction term, $\Delta\theta^{(1)}$:
+\begin{equation}
+    \Delta \theta^{(1)} = (M^{-1} + W)^{-1} \mathbf{y}^{(0)}
+\end{equation}
+For all subsequent iterations ($k > 0$), the correction term from the previous step, $\Delta\theta^{(k)}$, is used to calculate the new vector $\mathbf{y}^{(k)}$:
+\begin{equation}
+    \mathbf{y}^{(k)} = G^{T}V^{-1} \left[ \mathbf{D} - \mathbf{T}(\mathbf{U}) + G\Delta\theta^{(k)} \right]
+\end{equation}
+This updated $\mathbf{y}^{(k)}$ is then used to solve for the next correction, $\Delta\theta^{(k+1)}$. This cycle continues until the change in $\Delta\theta$ between iterations is negligible, indicating that the solution has converged.
+
+\section{Practical Implementation Details}
+
+\subsection{Parameter Transformation}
+The fitting algorithm operates on a set of internal fitting parameters, $\mathbf{U}$, which are transformed from the physical parameters, $\mathbf{P}$. The primary motivation for this transformation is to improve the linearity of the theoretical model with respect to the parameters being fitted. The Bayesian fitting procedure is fundamentally based on a linear approximation of the model. By transforming parameters that have a highly nonlinear effect on the theoretical values, the `U-space` becomes more 'linear,' which significantly improves the stability and convergence speed of the iterative solution.
+
+For quantities that are strictly positive and often vary over orders of magnitude, such as strength functions ($S_\ell$) and radiative widths ($\Gamma_\gamma$), a logarithmic transformation is employed:
+\begin{equation}
+    u_i = \ln(p_i)
+\end{equation}
+The inverse transformation, $p_i = e^{u_i}$, has the secondary benefit of ensuring the physical parameter remains positive. However, this is not the primary goal, as other parameters like fission widths ($\Gamma_f$) are allowed to become negative during the fit and are handled by other constraints.
+
+Parameters like the distant-level parameter ($R_\ell^\infty$) also exhibit significant nonlinearity. Ideally, they too would be transformed to improve the performance of the linear approximation. However, since $R_\ell^\infty$ can take on negative values, the logarithmic transform is not applicable. As a practical necessity, these parameters remain untransformed.
+\begin{equation}
+    u_i = p_i
+\end{equation}
+The fission widths are also handled similarly, such that the space conversion for all fittable URR parameters are given as:
+\begin{equation}
+    u_i = 
+    \begin{cases} 
+        \ln(p_i) & \text{if } p_i \in \{S_\ell, \Gamma_\gamma\} \\
+        p_i & \text{if } p_i \in \{R_\ell^\infty, \Gamma_f \}
+    \end{cases}
 \end{equation}
 
-The $\Delta \theta$ term requires an iterative solution due to the nonlinear nature of the theoretical models. At each iteration, $\Delta \theta$ is solved as the solution to the equation
-
+This transformation from P-space to U-space also requires a corresponding transformation of the covariance matrix. Using standard error propagation, the initial covariance matrix in U-space is constructed from the uncertainties in P-space. For a logarithmic transformation, the uncertainty transforms as $\sigma_{u_i} \approx \sigma_{p_i}/p_i$. Once the fitting is complete, the final covariance matrix in U-space, $M'_u$, is transformed back to the physical P-space, $M'_p$, using the Jacobian of the transformation, $J$:
 \begin{equation}
-    \Delta \theta = (M^{-1} + W)^{-1} y
+    M'_p = J M'_u J^T \quad \text{where} \quad J_{ij} = \frac{\partial p_i}{\partial u_j}
 \end{equation}
-in which $y$ is calculated as
-\begin{equation}
-    y = G^{T}V^{-1} \left[ d - t(U) + G\Delta\theta \right]
-    \label{eq:y-eq}
-\end{equation}
+This ensures that the final reported uncertainties accurately reflect the physical parameters of interest.
 
-The iterative method is required due to the utilization of the $\Delta \theta$ term in Equation \ref{eq:y-eq}. This is mitigated by setting $\Delta \theta = 0$ for the first iteration, 
-\begin{equation}
-    y^{(0)} = G^T V^{-1}[\, d - t(U) \,]
-    \label{eq:y-first}
-\end{equation}
-The results from Equation \ref{eq:y-first} are then used to obtain the first $\Delta \theta$ iteration, from which the full Equation \ref{eq:y-eq} can be used on each subsequent iteration.
-
-One issue when applying this method to nuclear data is that the uncertainties and sensitivities of the parameters can vary significantly in magnitude. In order to address this, the data is normalized by a scaling matrix $S$, in which its elements are defined as
+\subsection{Numerical Stability and Scaling}
+One of the primary challenges when applying this method to nuclear data is that the uncertainties and sensitivities of the parameters can vary by many orders of magnitude. Directly inverting the matrix $(M^{-1} + W)$ can be numerically unstable, leading to numerical precision issues. To address this, the system is normalized by a diagonal scaling matrix $S$, whose elements are defined as:
 \begin{equation}
     S_{ii} = \frac{1}{\sqrt{(M^{-1} + W)_{ii}}}
 \end{equation}
-This scaling is then applied to $(M^{-1} + W)$ to produce the normalized matrix $\widetilde{M}$, with
+This scaling is applied to produce a normalized, dimensionless matrix $\widetilde{M}$:
 \begin{equation}
     \widetilde{M} = S (M^{-1} + W) S
 \end{equation}
-
-The elements of $\widetilde{M}$ are given as
+The elements of $\widetilde{M}$ are the correlation coefficients, given by:
 \begin{equation}
 \widetilde{M}_{ij} = \frac{(M^{-1} + W)_{ij}}{\sqrt{(M^{-1} + W)_{ii}(M^{-1} + W)_{jj}}}
 \end{equation}
-The numerical values of $\widetilde{M}$ are bounded between $[-1,1]$, while the diagonal elements are all equal to 1. This produces improved numerical behavior.
+The values of $\widetilde{M}$ are bounded between [-1, 1], and the diagonal elements are all equal to 1. This "preconditioning" dramatically improves the numerical behavior of the matrix inversion.
 
-The scaled $\widetilde{M}$ is then used to determine a scaled update vector $\widetilde{z}$,
+The system is then solved in this scaled space to find a scaled update vector, $\widetilde{\mathbf{z}}$:
 \begin{equation}
-    \widetilde{z} = \widetilde{M}^{-1} (S\,y),
+    \widetilde{\mathbf{z}} = \widetilde{M}^{-1} (S\,\mathbf{y})
 \end{equation}
-The unscaled update parameter vector is then obtained from
+This scaled vector is then transformed back to the unscaled space to obtain the final physical parameter correction:
 \begin{equation}
-    \Delta \theta = S \widetilde{z}
+    \Delta \theta = S \widetilde{\mathbf{z}}
 \end{equation}
-and the unscaled updated covariance matrix is obtained via
+Similarly, the unscaled updated covariance matrix is recovered via:
 \begin{equation}
-    M' = S \widetilde{M}^{-1} S.
+    M' = S \widetilde{M}^{-1} S
 \end{equation}
 
-Once a new $\mathbf{U}'$ is obtained, $W$, $y$, $G$, and $t(\mathbf{U}')$ are recalculated, and another $\Delta \theta$ is determined. This process continues until convergence, at which the final $\mathbf{U}'$ parameter vector best represents the experimental data while considering uncertainties.
+This scaling procedure is mathematically equivalent to the unscaled approach and yields identical results, but critically avoids the numerical precision errors such as overflow and underflow that can occur when directly inverting a matrix with elements spanning many orders of magnitude.
 
-\section{The Parameter Vector $\mathbf{U}$}
+\subsection{Radiation Width Sensitivity Special Case}
+The radiation width, $\Gamma_\gamma$ is a special case that requires more complicated handling. The theoretical model is built on the assumption that the average radiative widths for orbital angular momenta differing by two are equal (e.g., $\Gamma_\gamma^0 \approx \Gamma_\gamma^2$ for s-wave and d-wave orbitals).
+
+The fitting procedure does not treat $\Gamma_\gamma^2$ as an independent parameter. Instead, only $\Gamma_\gamma^0$ is fitted. Since the fitting is performed in $U$-space, the sensitivity matrix requires the derivative of the cross section with respect to the transformed parameter, $u_i$. For the parameter corresponding to the s-wave radiative width, $u_{\Gamma^0} = \ln(\Gamma_\gamma^0)$, we apply the chain rule. This, combined with the physics coupling, gives the full Jacobian element $G_{ij}$:
+\begin{equation}
+    G_{ij} = \frac{\partial T_j}{\partial u_i} = 
+    \begin{cases} 
+        \frac{\partial T_j}{\partial \Gamma_\gamma^0}\Gamma_\gamma^0 + \frac{\partial T_j}{\partial \Gamma_\gamma^2} \Gamma_\gamma^2 & \text{if } u_i = u_{\Gamma^0} \\
+        0 & \text{if } u_i \text{ corresponds to } \Gamma_\gamma^2
+    \end{cases}
+\end{equation}
+Since $u_{\Gamma^0} = \ln(\Gamma_\gamma^0)$, the derivative term is simply $\frac{d\Gamma_\gamma^0}{du_{\Gamma^0}} = e^{u_{\Gamma^0}} = \Gamma_\gamma^0$. This formulation correctly accounts for both the parameter transformation and the physical model constraints.
+
+
+\section{Calculating the Sensitivity Matrix}
+
+The sensitivity matrix, $G$, is the heart of the fitting procedure, linking the change in a theoretical observable to a change in a fitting parameter. Given the complexity of the underlying physics models, particularly the statistical nature of the Unresolved Resonance Region, calculating these derivatives ($G_{ij} = \partial T_j / \partial u_i$) analytically is impractical. Therefore, a numerical approach is employed. This section details the methods used to calculate the derivatives for different types of observables.
+
+\subsection{Derivatives for Average Microscopic Cross Sections}
+
+For fitting to cross sections, the derivatives are calculated numerically using a standard finite difference method. Given each of these cross sections, $\langle \sigma_x \rangle$, the corresponding element in the sensitivity matrix is populated by approximating the derivative with respect to a given fitting parameter, $u_i$, as:
+\begin{equation}
+    G_{ij} = \frac{\partial \langle \sigma_x \rangle_j}{\partial u_i} \approx \frac{\langle \sigma_x(u_i + \Delta u_i) \rangle_j - \langle \sigma_x(u_i) \rangle_j}{\Delta u_i}
+\end{equation}
+where $\Delta u_i$ is a small perturbation applied to the parameter.
+
+However, fitting to self-shielded experimental data poses a significant challenge. These observables are not simple functions of the average cross section, but also depend on statistical fluctuations. Consequently, a simple numerical derivative of the $\langle T \rangle$ and $\langle Y \rangle$ quantities would require prohibitively expensive computation. Instead, the chain rule is applied between each observable and their respective cross section:
+\begin{equation} \label{eq:full_trans_deriv}
+    \frac{\partial\langle T\rangle}{\partial u_i} = e^{-n\langle\sigma_t\rangle}\left(\frac{\partial C_{T}}{\partial u_i} - nC_{T}\frac{\partial\langle\sigma_t\rangle}{\partial u_i}\right)
+\end{equation}
+and
+\begin{equation}
+    \frac{\partial\langle Y\rangle}{\partial u_i} = n \left[ 
+    \frac{\partial\langle\sigma_\gamma\rangle}{\partial u_i}
+    C_c + \langle\sigma_\gamma\rangle \frac{\partial C_c}{\partial u_i}
+    \right]
+\end{equation}
+
+However, the Monte Carlo precision issue still arises when calculating the derivative for the correction factors. In order to mitigate this issue, the correction factor derivatives were set equal to zero. Consequently, the observable derivatives for each parameter simplify to:
+\begin{equation}
+    \frac{\partial\langle T\rangle_j}{\partial u_i} \approx -n C_{T} e^{-n\langle\sigma_t\rangle} \frac{\partial\langle\sigma_t\rangle_j}{\partial u_i}
+\end{equation}
+for transmission, and
+\begin{equation}
+    \frac{\partial\langle Y\rangle}{\partial u_i} \approx n C_c  \frac{\partial\langle\sigma_\gamma\rangle}{\partial u_i}
+\end{equation}
+
+\section{Fitting Validation}
