@@ -1,3 +1,172 @@
 This chapter details and validates the procedure for calculating the theoretical average transmission to accurately fit parameters to self-shielded transmission measurements in the URR. As shown in \autoref{sec:correction-factor}, the theoretical average transmission is calculated as the product of the transmission of the average cross section, $e^{-n\langle \sigma \rangle}$, and a transmission correction factor $C_T$. While $C_T$ was previously defined in \autoref{eq:transmission-correction-factor} with an analytical form over an energy range, this procedure is not feasible in the URR where the true cross-section is unknown. Instead, SESH uses Monte Carlo integration in order to determine these energy-averaged quantities.
 
+The transmission correction factor calculation requires two components: A set of total cross-section samples, and a set of transmission samples. The former is performed via the rocedure described in \autoref{sec:sampling-parameters}. This is used to obtain a set of sampled cross-sections, $\left\{ \sigma_{0}, \sigma_{1}, ..., \sigma_{N} \right\}$. For each sampled cross-section, a sampled transmission is also obtained, $\left\{ T_{0}, T_{1}, ..., T_{N}\right\}$, where $T_{i} = e^{-n\sigma_{i}}$ and $n$ is the sample thickness. From these cross-section and transmission sets, their respective averages are obtained:
+\begin{equation}
+    \langle \sigma \rangle = \frac{1}{N} \sum_{i=0}^{N} \sigma_{i}
+\end{equation}
+and
+\begin{equation}
+    \langle T \rangle = \frac{1}{N} \sum_{i=0}^{N} T_{i}
+\end{equation}
+
+From these averages, the correction factor defined in \autoref{sec:correction-factor} can be approximated as:
+\begin{equation}
+    C_T \approx \frac{\langle T \rangle}{e^{-n\langle \sigma \rangle}}
+\label{eq:CT_mc}
+\end{equation}
+
 The accuracy of this method will be validated using $^{181}$Ta, for which a recent evaluation provides new resonance parameters. The validation is twofold. First, the theoretical model is compared against MCNP simulations to provide a detailed characterization of its performance. As the MCNP model utilizes the exact best-fit parameters from the recent $^{181}$Ta evaluation, it serves as an ideal benchmark to investigate the effects of physical parameters such as sample thickness and temperature. Second, the calculated average transmission is compared against the experimental data that was used in the evaluation. This comparison serves to validate the theoretical model's overall performance for a single sample thickness, serving as a final integration test for SESH’s theoretical self-shielded transmission calculation.
+
+\section{Verification of the Correction Factor Model}
+Before integrating the transmission correction into the fitting procedure, it is essential to verify that SESH accurately calculates the correction factor itself. The verification was performed by comparing the results from SESH to those from a high-fidelity model of the experiment constructed using MCNP \cite{mcnp}. This MCNP model serves as a computational benchmark, providing a ground truth against which the statistical methods in SESH can be compared. Three key physical parameters that could influence the correction factor were investigated: the number of external resonance pairs used in the calculation, the physical thickness of the sample, and the temperature of the sample.
+
+\subsection{MCNP Benchmark Model}
+The MCNP model was configured to simulate neutron transmission through a $^{181}$Ta sample. The cross-section data for the simulation was prepared from the ENDF/B-VIII.1 evaluation \cite{endf-manual} and processed into a pointwise format using NJOY \cite{njoy}. By using the exact, finely-resolved cross sections from a formal evaluation, the MCNP simulation can directly calculate the true average transmission, $\langle T \rangle$, and the transmission of the average cross section, $e^{-n\langle\sigma\rangle}$, over a given energy group. The benchmark correction factor is then calculated as:
+\begin{equation}
+    C_{T, \text{MCNP}} = \frac{\langle T \rangle_{\text{P-Table=ON}}}{\langle T \rangle_{\text{P-Table=OFF}}}
+\end{equation}
+This provides an ideal reference value, free from the statistical approximations inherent to the SESH methodology, against which SESH's calculations can be validated.
+
+\subsection{Influence of External Resonance Pairs}
+The SESH code includes a feature to add resonance pairs at energies outside of the specific energy bin being analyzed. This is intended to account for the contributions from the tails of distant resonances, which can still influence the cross section within the bin. To quantify the impact of this feature, the correction factor was calculated for a 4mm $^{181}$Ta sample at 300K using an increasing number of external resonance pairs.
+
+The results, shown in \autoref{fig:tc-resonance-pairs}, demonstrate that the inclusion of external resonance pairs has a slight but noticeable influence on the calculated correction factor. As more pairs are added, the SESH calculation converges toward the MCNP benchmark value. \autoref{fig:tc-resonance-pairs-error} shows the relative error between SESH and MCNP, confirming that using more resonance pairs produces more accurate results. For the remainder of this work, four external resonance pairs were used in all SESH calculations to ensure a balance between accuracy and computational efficiency.
+
+ \begin{figure}[ht]
+     \centering
+     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ResonancePairInfluenceOnCT.png}
+     \caption{Comparison of the transmission correction factor for a 4mm $^{181}$Ta sample at 300K, calculated with SESH using a varying number of external resonance pairs and compared to the MCNP benchmark.}
+     \label{fig:tc-resonance-pairs}
+ \end{figure}
+
+ \begin{figure}[ht]
+     \centering
+     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ResonancePairError.png}
+     \caption{Relative error between SESH and MCNP for the calculation shown in \autoref{fig:tc-resonance-pairs}.}
+     \label{fig:tc-resonance-pairs-error}
+ \end{figure}
+
+
+\subsection{Verification of Sample Thickness Dependence}
+A critical parameter in self-shielding experiments is the thickness of the sample. To determine the range of applicability for SESH, various thicknesses of $^{181}$Ta were simulated, specifically 2mm, 4mm, 8mm, and 12mm. The correction factors calculated by SESH were then compared against the MCNP benchmark for each thickness.
+
+As shown in \autoref{fig:tc-thickness} and \autoref{fig:tc-thickness-error}, there is very strong agreement between SESH and MCNP for the thinner samples. However, as the sample thickness increases, SESH begins to under-predict the correction factor. This deviation becomes more pronounced for thicker samples, particularly where the correction factor $C_T$ exceeds a value of 1.5. This analysis suggests that to maintain a disagreement of less than 1\%, the use of this method should be limited to samples where the calculated correction factor remains below this threshold.
+
+ \begin{figure}[ht]
+     \centering
+     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ct-verification.png}
+     \caption{Comparison of the transmission correction factor calculated with SESH and MCNP for various thicknesses of a $^{181}$Ta sample.}
+     \label{fig:tc-thickness}
+ \end{figure}
+
+ \begin{figure}[ht]
+     \centering
+     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ct-verification-err.png}
+     \caption{Relative error between SESH and MCNP for the calculations shown in \autoref{fig:tc-thickness}.}
+     \label{fig:tc-thickness-error}
+ \end{figure}
+
+
+\subsection{Verification of Sample Temperature Dependence}
+The final parameter investigated was the sample temperature, which influences the Doppler broadening of the resonances. The $^{181}$Ta evaluation was processed at five different temperatures: 100K, 200K, 300K, 400K, and 500K. These cross sections were used to calculate the correction factor in MCNP for a 4mm thick sample, which was then compared to the SESH results at the same temperatures.
+
+The results, presented in \autoref{fig:tc-temperature} and \autoref{fig:tc-temperature-error}, show a very strong agreement between SESH and MCNP across all examined temperatures. The relative error does not exhibit any significant bias with temperature, indicating that the Doppler broadening and other temperature-dependent physics are correctly modeled in SESH for the purpose of calculating the transmission correction factor.
+
+ \begin{figure}[ht]
+     \centering
+     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/SESH_MCNP_Temperature.png}
+     \caption{Comparison between MCNP and SESH correction factors at various temperatures for a 4mm thick $^{181}$Ta sample.}
+     \label{fig:tc-temperature}
+ \end{figure}
+
+ \begin{figure}[ht]
+     \centering
+     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ct_temperature_err.png}
+     \caption{Relative error between SESH and MCNP for the calculations shown in \autoref{fig:tc-temperature}.}
+     \label{fig:tc-temperature-error}
+ \end{figure}
+ 
+\section{Integration with the Parameter Fitting Workflow}
+After verifying the standalone accuracy of the SESH model, the next crucial step is to integrate it into the SAMMY resonance parameter fitting code. This integration transforms the correction factor from a simple calculation into a dynamic component of the fitting process, allowing experimental transmission data to be fit directly. This requires not only the correction factor itself, but also its derivative with respect to the parameters being adjusted.
+
+\subsection{Numerical Estimation of the Correction Factor Derivative}
+The Bayesian fitting algorithm in SAMMY, like many optimization routines, relies on the partial derivative of the theoretical model with respect to each fitting parameter, $u$. For the theoretical transmission, $\langle T \rangle = C_T e^{-n\langle\sigma\rangle}$, the derivative is given by the product rule:
+\begin{equation}
+    \frac{\partial \langle T \rangle}{\partial u} = e^{-n\langle\sigma\rangle} \frac{\partial C_T}{\partial u} + C_T \frac{\partial e^{-n\langle\sigma\rangle}}{\partial u}
+\end{equation}
+While the derivative of the Hauser-Feshbach term, $\partial e^{-n\langle\sigma\rangle}/\partial u$, is calculated analytically within SAMMY, the derivative of the correction factor, $\partial C_T / \partial u$, is not straightforward as $C_T$ is the output of a Monte Carlo process.
+
+To solve this, a numerical approach was implemented. For a given parameter $u$ (such as the s-wave strength function, $S_0$), SESH samples the parameter from a narrow distribution around its central value. The resulting distribution of $C_T$ values is then plotted against the sampled parameter values, as shown in \autoref{fig:ct-derivative-regression}. A linear regression is performed on these points, and the slope of the best-fit line is taken as the estimate of the derivative $\partial C_T / \partial u$. This linear regression method was found to be more statistically efficient than a standard finite difference approach, providing a much lower variance in the derivative estimate for the same number of particle histories, as illustrated in \autoref{fig:ct-derivative-variance}.
+
+% TODO: Insert figures corresponding to Candidacy Figures 4.12, 4.13, 4.14
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeEstimationExample.png}
+    \caption{Estimation of $\partial C_T / \partial u$ for $S_0$ at 3 keV using linear regression.}
+    \label{fig:ct-derivative-regression}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeEstimation.png}
+    \caption{Comparison of variance of calculated derivative using linear regression versus finite difference methods at 3 keV for \textsuperscript{181}Ta.}
+    \label{fig:ct-derivative-variance}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeMethod.png}
+    \caption{Variance as a function of total particle histories for both linear regression and finite difference.}
+    \label{fig:derivative-variance-reduction}
+\end{figure}
+
+
+\subsection{Verification of the Integrated Fitting Procedure}
+With a method to calculate both $C_T$ and its derivative, the fully integrated SESH+SAMMY workflow could be verified. The primary goal of this verification is to demonstrate that the fitting procedure can accurately recover known resonance parameters from synthetic experimental data.
+
+The verification test was structured as follows:
+\begin{enumerate}[noitemsep]
+    \item Synthetic transmission data for multiple sample thicknesses was generated using MCNP with the known $^{181}$Ta resonance parameters from the ENDF/B-VIII.1 evaluation.
+    \item An initial set of incorrect resonance parameters was chosen from an older compilation, the Atlas of Neutron Resonances \cite{atlas}.
+    \item The SESH+SAMMY code was used to fit the synthetic MCNP data, starting from the incorrect parameters.
+\end{enumerate}
+
+The fitting process was performed twice: once with the numerical derivative calculation for $\partial C_T / \partial u$ enabled, and once assuming $\partial C_T / \partial u = 0$. The latter case represents the implicit assumption made in previous, manual correction workflows. The results, shown in \autoref{fig:fitting-comparison}, demonstrate that both fits converge to similar values. However, as detailed in Table \ref{tab:fitting-error}, enabling the derivative calculation produces a more accurate fit with a lower final $\chi^2/N$. The final converged strength function values in Table \ref{tab:fitting-values} confirm that the new, fully integrated workflow successfully recovers the true parameters used to generate the synthetic data. This verifies that the integration is correct and the derivative estimation is sufficiently accurate for use in the fitting procedure.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DCtFittingPerformance.png}
+    \caption{Fitting Result Comparison between numerically estimating the derivative $\partial C_T/\partial u$ versus the assumption $\partial C_T/\partial u=0$ for all parameters.}
+    \label{fig:fitting-comparison}
+\end{figure}
+
+
+\begin{table}[H]
+    \centering
+    \caption{Error at final converged values}
+    \begin{tabular}{| c | c c |}
+        \hline
+                               & $\partial C_T / \partial u$=ON  & $\partial C_T / \partial u$=OFF \\
+                               \hline
+        $\chi^2/N$ & 1.981  & 2.444 \\
+        \hline
+    \end{tabular}
+    \label{tab:fitting-error}
+\end{table}
+
+
+\begin{table}[H]
+    \centering
+    \caption{Final Converged Values for both derivative cases}
+    \begin{tabular}{|c|ccc|}
+        \hline
+        Parameter & ENDF-8.1  & $\partial C_T / \partial u =$ON  & $\partial C_T / \partial u =$OFF \\
+        \hline
+        $S_0 \times 10^{-4}$   & $1.740 \pm 0.03$ & 1.807 & 1.752\\
+        $S_1 \times 10^{-4}$   & $0.800 \pm 0.07$ & 0.620 & 0.751\\
+        $S_2 \times 10^{-4}$   & $1.690 \pm 0.18$ & 1.486 & 1.499\\
+        \hline
+    \end{tabular}
+    \label{tab:fitting-values}
+\end{table}
+
