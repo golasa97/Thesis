@@ -1,0 +1,133 @@
+
+\section{Motivation and Implementation Challenges}
+While the monotopic correction provides the foundational methodology, a significant limitation of the previous workflow was its inability to handle samples containing multiple isotopes. From a practical standpoint, producing highly enriched, thick samples required for accurate URR measurements is often prohibitively expensive. Natural-element or mixed-isotope samples offer a much more cost-effective alternative for experimental campaigns. Therefore, extending the self-shielding correction to multi-isotope systems was a critical step in making the integrated SAMMY workflow a more versatile and practical tool for nuclear data evaluation.
+
+Implementing this capability, however, was a non-trivial task, primarily due to the architectural rigidity of the legacy FORTRAN codebases of SESH and SAMMY. The original source code was built using primitive memory management techniques, such as static arrays and common blocks, which are inherently inflexible. This structure could not dynamically accommodate a variable number of isotopes, making a simple extension of the existing logic impossible. Overcoming this required a significant, piece-by-piece rewrite of the core routines to introduce the necessary flexibility for handling complex, multi-isotope parameter sets.
+
+On the other hand, this modernization effort yielded a significant benefit beyond the immediate goal. The refactored, modular codebase is now compatible with modern features under development in SAMMY, most notably the `fitAPI` interface and its associated fitter modules. This ensures that the new multi-isotope capability is not a terminal feature but a foundational improvement that facilitates future development and integration.
+
+\section{Framework for Multi-Isotope Self-Shielding}
+For a sample composed of a mixture of isotopes, the total macroscopic cross-section is a simple linear combination of the contributions from each constituent isotope, weighted by their respective atomic fractions, $\gamma_j$:
+\begin{equation}
+\langle \sigma \rangle_{mix} = \sum_j \gamma_j \frac{1}{N} \sum_{i} \sigma_{i,j}\end{equation}
+However, the non-linear nature of transmission complicates this picture. The average transmission of the mixture is given by:
+\begin{equation}
+\langle T \rangle_{mix} = \frac{1}{N} \sum_{i} \exp{-n \sum_j \gamma_i \sigma_{ij}}
+\end{equation}
+
+One characteristic of this relationship is that the presence of multiple isotopes tends to ``dampen'' the overall self-shielding effect. The fluctuations from one isotope's resonance structure are averaged over the relatively smooth background cross-section of the other isotopes, leading to a correction factor for the mixture that is less pronounced than it would be for a pure sample of the dominant resonant isotope. This dampening was confirmed via simulation of transmission through a mixed $^{90}$Zr/$^{92}$Zr sample from 0 to 100\% $^{90}$Zr (in which $^{92}$Zr constituted the remaining fraction in each case), which is shown in \autoref{fig:transmission-dampening}.
+
+The main consequnce of this characteristic is that it is not possible to calculate the self-shielding contribution from each isotope independently.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/multiiso_transmission_dampening.png}
+    \caption{Illustration of the self-shielding dampening by the inclusion of multiple isotopes with an MCNP simulation of a transmission through a 3cm sample of $^{90}$Zr and $^{92}$Zr while varying their relative enrichments.}
+    \label{fig:transmission-dampening}
+\end{figure}
+
+\section{Validation Methodology}
+The validation of the multi-isotope model followed the same fundamental strategy as the monotopic case: a direct comparison of SAMMY's calculations against a high-fidelity MCNP simulation. Natural Zirconium was chosen as the basis for this validation, as its isotopic composition includes several isotopes with significant abundances and overlapping unresolved resonance regions, making it an ideal test case.
+
+However, a significant obstacle was discovered when using standard ENDF/B-VIII.1 evaluations for the Zirconium isotopes. For many evaluations, the point-wise cross-section data provided in File 3 is not consistent with, or directly derivable from, the average resonance parameters provided in File 2. This inconsistency is a critical issue for validation: SAMMY calculates self-shielding based on the statistical fluctuations derived from File 2 parameters, while MCNP's result is based on the pre-defined, point-wise data in File 3. A comparison between the two would be meaningless, as it would be impossible to distinguish between a true error in the self-shielding model and a simple discrepancy in the underlying physics inputs.
+
+To create a valid, ``apples-to-apples'' comparison, it was necessary to generate a set of ``quasi-Zr'' ENDF files. In this process, the File 2 average resonance parameters from the SAMMY input were used to generate a new, perfectly consistent File 3, representing a smooth average cross-section. This ensured that both SAMMY and the MCNP/NJOY toolchain were starting from the exact same physical model, isolating the self-shielding calculation as the only variable under scrutiny.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.55\linewidth]{Transmission Correction/Figures/ensuring-f2-f3-consistency-flow.jpg}
+    \caption{Illustrating the process used to ensure a consistent File 2 and File 3 ENDF file for ensuring confident validation of SAMMY's Multi-Isotope Self-Shielding Correction.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/quasi-zr-totxs.png}
+    \caption{Comparison between the original ENDF-8.1 File 3 and the calculated File 3 from File 2 parameters for $^{90}$Zr.}
+\end{figure}
+
+\section{Discrepancies with MCNP}
+With a consistent set of ENDF files, the multi-isotope self-shielding correction in SAMMY was benchmarked against MCNP. The results, however, revealed a significant and unexpected discrepancy. As shown in \autoref{fig:zr-discrepancy}, the initial SAMMY calculations consistently overestimated the transmission correction factor compared to the MCNP benchmark. This indicated that SAMMY was predicting a higher degree of self-shielding than the high-fidelity MCNP model, a counterintuitive result given that both were using identical average resonance parameters.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/zr-discrepancy.png}
+    \caption{Initial comparison of the transmission correction factor for a 10cm natural Zr sample, showing the discrepancy between the original SAMMY calculation and the MCNP benchmark.}
+    \label{fig:zr-discrepancy}
+\end{figure}
+
+Further investigation revealed that the source of this discrepancy was not in the self-shielding model itself, but rather in the way MCNP utilizes cross-section data in the URR. MCNP relies on a pre-generated probability table (P-Table) to sample cross-section values\cite{ptables}.
+
+\subsection{Background on Probability Tables}
+Probability tables are a computationally efficient method of representing the variance due to resonant structure in the URR. Similarly to the previously described cross-section sampling, a population of cross-section samples, $\{ \sigma_1, \sigma_2, \ldots, \sigma_N \}$, is generated from average resonance parameters and attributed to a given energy bin. This population is then sorted by magnitude and divided into $J$ discrete bins.
+
+For each bin $j$, a representative cross section, $\sigma_j$, is calculated as the average of all samples within that bin's boundaries. The probability of that bin, $P_j$, is the fraction of the total number of samples that fall within it:
+\begin{equation}
+    P_j = \frac{\text{Number of samples in bin } j}{N}
+\end{equation}
+where $\sum_{j=1}^{J} P_j = 1$.
+
+When unresolved resonance parameters are provided for this purpose, as indicated by the LSSF=1 flag in the ENDF-6 formats manual, the probability table is stored not as direct cross-section values, but as normalization factors, $f_j$. These factors are defined relative to the average cross section of the entire sampled population, $\langle \sigma \rangle_{MC}$:
+\begin{equation}
+    f_j = \frac{\sigma_j}{\langle \sigma \rangle_{MC}}
+\end{equation}
+where $\langle \sigma \rangle_{MC} = \frac{1}{N} \sum_{i=1}^{N} \sigma_i$. This method allows a transport code to reconstruct the cross-section distribution by scaling the factors $f_j$ by the appropriate energy-dependent average cross section.
+
+This factor is then multiplied by some pointwise value $\sigma(E)$ for whatever energy the neutron interaction is being calculated for. The purpose of this is to enable transport codes to more accurately represent the non-self-shielded cross-section.
+
+This ends up being problematic for instances where the average cross-section sampled by the probability table generation differs significantly from the given pointwise cross-section, as is the case here. This is because the variance ends up inadvertently being scaled with the given pointwise cross-section, and is not representative of the cross-section distribution previously sampled. The effect of this is shown in \autoref{fig:zr-ptable-scaling}, in which the both the average cross-section \textit{and} the variance are scaled.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{Transmission Correction/Figures/zr90-ptable-scaling.png}
+    \caption{Showing the differences between the original sampled distribution and the distribution scaled to File 3 in the $^{90}$Zr sampled parameters at 400 keV.}
+    \label{fig:zr-ptable-scaling}
+\end{figure}
+
+\subsection{Isolating Variance Conservation Issue}
+
+To confirm that this variance reduction was the sole cause of the discrepancy, a numerical experiment was conducted. The cross-section sampling routines from SAMMY and NJOY (used to generate MCNP's P-Tables) were decoupled from their respective transmission calculation methods. As illustrated in \autoref{fig:variance-comparison}, when the same transmission calculation method was used, both the SAMMY-sampled and NJOY-sampled cross sections produced identical results. The discrepancy only appeared when comparing the direct transmission calculation (used by SAMMY) to the P-Table method (used by MCNP). This definitively proved that the disagreement was not due to a flaw in SAMMY's resonance ladder sampling, but was entirely attributable to the variance-reducing deficiency in the MCNP/NJOY P-Table sampling workflow. This finding is critical, as it validates SAMMY's physical model and highlights a potential source of systematic error in simulations that rely on P-Table methods for URR calculations.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/variance-comparison.png}
+    \caption{Comparison of transmission calculations for a 5.15cm Zr-90 sample, demonstrating that the discrepancy between SAMMY and MCNP is due to the P-Table sampling method, not the underlying resonance parameter sampling.}
+    \label{fig:variance-comparison}
+\end{figure}
+
+\section{Verification of the Integrated Fitting Procedure}
+With the multi-isotope self-shielding model validated, the final step was to verify the integrated fitting procedure. This verification follows the same strategy employed for the monotopic case: demonstrating that the SAMMY fitting engine can accurately recover known resonance parameters from a synthetic dataset.
+
+A significant advancement implemented alongside the multi-isotope capability was the modernization of the fitting routines. The original workflow was refactored to integrate with the fitAPI interface, overcoming the limitations of the legacy codebase. This refactoring enabled a crucial new feature: the ability to simultaneously fit multiple datasets, even of different types (e.g., transmission, capture yield, total cross-section).
+
+To validate this new, comprehensive fitting capability, a test was performed using natural Zirconium. Two synthetic datasets were generated: a transmission measurement for a 4cm thick sample and an average total cross-section measurement. Starting with perturbed initial parameters, SAMMY was tasked with performing a simultaneous fit to both datasets. The procedure was successful, with the fitted parameters converging accurately to the true values used to generate the synthetic data, thus validating both the multi-isotope self-shielding correction and the advanced simultaneous fitting functionality.
+
+The results of this simultaneous fit, shown in \autoref{fig:multi-isotope-fitting-validation} and Table \ref{tab:multi-isotope-fitting-results}, demonstrate a successful validation. The fitting procedure converged successfully, and the final fitted parameters for the $^{90}$Zr strength functions are in excellent agreement with the true values used to generate the synthetic data. This confirms that the multi-isotope self-shielding correction is implemented correctly and that the refactored fitting engine is robust and accurate for complex, multi-dataset analysis scenarios.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/multi-isotope-fit.png}
+    \caption{Simultaneous fit of natural Zr total cross section and 4cm transmission data. The fit, starting from incorrect prior parameters, successfully recovers the ideal curve.}
+    \label{fig:multi-isotope-fitting-validation}
+\end{figure}
+
+\begin{table}[H]
+    \centering
+    \caption{Validation of the simultaneous multi-isotope fitting procedure for $^{90}$Zr strength functions.}
+    \begin{tabular}{|c|ccc|}
+        \hline
+        Parameter & Target & Prior & Final Fit \\
+        \hline
+        $S_0$   & 0.54  & 0.24 & 0.545 \\
+        $S_1$   & 3.8   & 1.8  & 3.7995 \\
+        $S_2$   & 1.5   & 0.5  & 1.496 \\
+        \hline
+        $\chi^2/N$ & -- & 7597.55 & 0.697 \\
+        \hline
+    \end{tabular}
+    \label{tab:multi-isotope-fitting-results}
+\end{table}
+
