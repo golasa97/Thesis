@@ -11,6 +11,65 @@
 \usepackage{multirow}
 \usepackage{adjustbox}
 \usepackage{subcaption}
+%\usepackage{xcolor}                           
+%\usepackage{listings}                         
+                                              
+% Colors for syntax highlighting              
+%\definecolor{codegreen}{rgb}{0,0.6,0}         
+%\definecolor{codegray}{rgb}{0.5,0.5,0.5}      
+%\definecolor{codepurple}{rgb}{0.58,0,0.82}    
+%\definecolor{backcolour}{rgb}{0.95,0.95,0.92} 
+%\definecolor{stringcolor}{RGB}{42, 0, 255}    
+%\definecolor{numbercolor}{RGB}{255, 0, 0}     
+%\definecolor{keycolor}{RGB}{127, 0, 85}       
+%                                              
+%% General listing style                       
+%\lstdefinestyle{mystyle}{                     
+%    backgroundcolor=\color{backcolour},       
+%    commentstyle=\color{codegreen},           
+%    keywordstyle=\color{magenta},             
+%    numberstyle=\tiny\color{codegray},        
+%    stringstyle=\color{codepurple},           
+%    basicstyle=\ttfamily\footnotesize,        
+%    breakatwhitespace=false,                  
+%    breaklines=true,                          
+%    captionpos=b,                             
+%    keepspaces=true,                          
+%    numbers=left,                             
+%    numbersep=5pt,                            
+%    showspaces=false,                         
+%    showstringspaces=false,                   
+%    showtabs=false,                           
+%    tabsize=2                                 
+%}                                             
+%\lstset{style=mystyle}                        
+%                                              
+%% JSON language definition                    
+%\lstdefinelanguage[JSON]json{                 
+%    keywords={true, false, null},             
+%    keywordstyle=\color{keycolor},            
+%    string=[s]{""}{""},                       
+%    stringstyle=\color{stringcolor},          
+%    numberstyle=\color{numbercolor},          
+%    comment=[l]{//},                          
+%    commentstyle=\color{gray}\ttfamily,       
+%    morecomment=[s]{/*}{*/},                  
+%    literate=                                 
+%        *{0}{{{\color{numbercolor}0}}}{1}     
+%         {1}{{{\color{numbercolor}1}}}{1}     
+%         {2}{{{\color{numbercolor}2}}}{1}     
+%         {3}{{{\color{numbercolor}3}}}{1}     
+%         {4}{{{\color{numbercolor}4}}}{1}     
+%         {5}{{{\color{numbercolor}5}}}{1}     
+%         {6}{{{\color{numbercolor}6}}}{1}     
+%         {7}{{{\color{numbercolor}7}}}{1}     
+%         {8}{{{\color{numbercolor}8}}}{1}     
+%         {9}{{{\color{numbercolor}9}}}{1}     
+%}
+
+
+
+
 
 
 \makeatletter
@@ -144,8 +203,35 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%%  For Appendices  %%%%%%%%%%%%%%%%%%%
+
+%Note the numbering of the chapter heading is changed.
+%This is a sentence to take up space and look like text.
+%\section{A Section Heading}
+%This is how equations are numbered in an appendix:
+%\begin{equation}
+%x^2 + y^2 = z^2
+%\end{equation} 
+%
+%\chapter{THIS IS ANOTHER APPENDIX}
+%This is a sentence to take up space and look like text.
+
+%\specialhead{ACKNOWLEDGMENT}
+%The acknowledgment text goes here. Unlike chapter headings, 
+%this heading is not numbered.
+
+%\specialhead{ABSTRACT}
+%Write your abstract here. Again, the heading does not receive a number.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%% Bibliography      %%%%%%%%%%%%%%%%%%%
+\printbibliography[title=Literature Cited]
+
+
+%%%%%%%%%%%%%%%%%%%%%%%  For Appendices  %%%%%%%%%%%%%%%%%%%
 %\appendix    % This command is used only once!
 %\addtocontents{toc}{\parindent0pt\vskip12pt APPENDICES} %toc entry, no page #
+%\input{"AppendixA/appendix.tex"}
 
 %Note the numbering of the chapter heading is changed.
 %This is a sentence to take up space and look like text.
