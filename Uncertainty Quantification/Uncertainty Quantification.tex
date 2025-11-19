@@ -45,17 +45,28 @@ This conflict is illustrated in \autoref{fig:zr90-xs-binsize-comparisons} for wh
 
 To properly quantify the model uncertainty arising from the finite resonance effect, a computational method based on stochastic sampling was developed. The fundamental goal is to simulate the inherent statistical nature of the unresolved resonance region (URR) to determine the variance of the self-shielding correction factor, $C_T$, for a given energy bin and sample thickness. This is achieved by generating thousands of statistically equivalent, physically plausible resonance ladders and observing the resulting distribution of the calculated transmission.
 
-The simulation process follows a sequence of discrete steps for each realization:
+The simulation process follows a sequence of discrete steps for each realization $k$:
 
 \begin{enumerate}
-    \item \textbf{Generate Stochastic Resonance Ladders:} The process begins by generating a unique resonance ladder based on a set of energy-dependent average resonance parameters ($\langle D \rangle$, $\langle \Gamma_n^0 \rangle$, etc.). For each realization, individual resonance energies ($E_r$) are sampled from a Wigner distribution, and their corresponding reduced neutron widths ($\Gamma_n^0$) are sampled from a Porter-Thomas distribution. This creates a unique, stochastic, but physically plausible set of resonances that is consistent with the governing nuclear statistics.
+    \item The process begins by generating a unique resonance ladder based on a set of energy-dependent average resonance parameters ($\langle D \rangle$, $\langle \Gamma_n^0 \rangle$, etc.). For each realization, individual resonance energies ($E_r$) are sampled from a Wigner distribution, and their corresponding reduced neutron widths ($\Gamma_n^0$) are sampled from a Porter-Thomas distribution. This creates a unique, stochastic, but physically plausible set of resonances that is consistent with the governing nuclear statistics.
 
-    \item \textbf{Calculate Pointwise Cross-Sections:} Each generated resonance ladder is then used to calculate a high-fidelity, pointwise cross-section. The resonance parameters are passed to the R-Matrix calculation engine within SAMMY to produce a theoretical 0K cross-section. This cross-section is subsequently Doppler broadened to the temperature of the corresponding experimental measurement (e.g., 294K), resulting in a realistic, temperature-dependent pointwise cross-section file for each unique realization.
+    \item Each generated resonance ladder is then used to calculate a high-fidelity, pointwise cross-section, $\sigma_k(E)$. The resonance parameters are passed to the R-Matrix calculation engine within SAMMY to produce a theoretical 0K cross-section. This cross-section is subsequently Doppler broadened to the temperature of the corresponding experimental measurement (e.g., 294K), resulting in a realistic, temperature-dependent pointwise cross-section file for each unique realization.
 
-    \item \textbf{Simulate Pointwise Transmission:} From each broadened cross-section realization, the corresponding pointwise transmission, $T(E)$, is calculated using the Beer-Lambert law, $T(E) = e^{-n\sigma(E)}$. This calculation is performed for each sample thickness relevant to the analysis (e.g., 3mm, 6mm, and 12mm for the $^{181}$Ta case).
+    \item From each broadened cross-section realization, the corresponding pointwise transmission, $T_k(E)$, is calculated as $T_k(E) = e^{-n\sigma_k(E)}$. This calculation is performed for each sample thickness relevant to the analysis (e.g., 3mm, 6mm, and 12mm for the $^{181}$Ta case).
 
-    \item \textbf{Build Statistical Distributions:} This entire process is repeated to generate thousands of unique realizations. The resulting pointwise transmission files for each realization are then numerically integrated over the predefined energy bins of interest to calculate the energy-averaged transmission, $\langle T \rangle$, and average cross section, $\langle \sigma \rangle$. This creates a large population of $\langle T \rangle$ and $\langle \sigma \rangle$ values for each energy bin, from which a distribution of the self-shielding correction factor, $C_T = \frac{\langle T \rangle}{e^{-n\langle\sigma\rangle}}$, can be determined. The standard deviation of this $C_T$ distribution is the quantified self-shielding model uncertainty for that specific energy bin and sample thickness.
+    \item The resulting pointwise transmission and cross section files for each realization are then numerically integrated over the predefined energy bins of interest (from $E_0$ to $E_1$) to calculate the energy-averaged transmission, $\langle T \rangle_k$, and average cross section, $\langle \sigma \rangle_k$.
+    \begin{align}
+        \langle T \rangle_k &= \frac{1}{E_1 - E_0} \int_{E_0}^{E_1} T_k(E) dE \\
+        \langle \sigma \rangle_k &= \frac{1}{E_1 - E_0} \int_{E_0}^{E_1} \sigma_k(E) dE
+    \end{align}
+    
+    \item This entire process is repeated for $N$ unique realizations. Unlike the approximations performed in \autoref{sec:tc-monotopic} when calculating self-shielding using the SESH method, this procedure calculates the exact self-shielding correction factor for each realization, $C_{T,k}$:
+    \begin{equation}
+        C_{T,k} = \frac{\langle T \rangle_k}{e^{-n\langle\sigma\rangle_k}}
+    \end{equation}
+    This creates a large population of $C_T$ values, {$C_{T,1}, C_{T,2}, \dots, C_{T,N}$}. The standard deviation of this population, $\Delta C_T$, is the quantified self-shielding model uncertainty for that specific energy bin and sample thickness.
 \end{enumerate}
+
 
 This procedure effectively translates the uncertainty from the finite sampling of resonance parameters into a quantifiable uncertainty on the correction factor that will be applied to an experimental measurement.
 
@@ -67,23 +78,45 @@ A key question in URR analysis is how wide an energy bin must be to be considere
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.85\linewidth]{Uncertainty Quantification/Figures/ct-error-vs-binwidth.png}
+    \includegraphics[width=0.85\linewidth]{Uncertainty Quantification/Figures/ct-err-vs-binwidth.png}
     \caption{The relative uncertainty of the self-shielding correction factor $(\Delta C_T / C_T)$ as a function of the number of resonances included in the energy bin for three different sample thicknesses of $^{181}$Ta. The uncertainty is shown for an energy bin centered at 3.5 keV.}
     \label{fig:ct-error-vs-binwidth}
 \end{figure}
 
-\autoref{fig:ct-error-vs-binwidth} shows the relative uncertainty of the correction factor, $\Delta C_T / C_T$, as a function of the number of resonances included in an energy bin centered at 3.5 keV. The uncertainty decreases predictably as the number of resonances increases, as expected from statistical sampling. However, the magnitude of the uncertainty is strongly dependent on the sample thickness. For the thinnest sample (3mm), the uncertainty is relatively small, dropping below 2% with only a few dozen resonances. In contrast, for the heavily self-shielded 12mm sample, the uncertainty remains above 5% even when 50 resonances are included in the bin. At the heuristic of 10 resonances per bin, the model uncertainty is nearly 10% for the 12mm sample, a significant value that cannot be ignored. This demonstrates that a single heuristic for bin size is not universally applicable; the required number of resonances depends heavily on the degree of self-shielding.
+\autoref{fig:ct-error-vs-binwidth} shows the relative uncertainty of the correction factor, $\Delta C_T / C_T$, as a function of the number of resonances included in an energy bin centered at 3.5 keV. The uncertainty decreases predictably as the number of resonances increases, as expected from statistical sampling. However, the magnitude of the uncertainty is strongly dependent on the sample thickness. For the thinnest sample (3mm), the uncertainty is relatively small, dropping below 2\% with only a few dozen resonances. In contrast, for the heavily self-shielded 12mm sample, the uncertainty remains above 5\% even when 50 resonances are included in the bin. At the heuristic of 10 resonances per bin, the model uncertainty is nearly 10\% for the 12mm sample, a significant value that cannot be ignored. This demonstrates that a single heuristic for bin size is not universally applicable; the required number of resonances depends heavily on the degree of self-shielding.
 
-\subsection{Comparison with Experimental Uncertainty}
-To contextualize the magnitude of this model uncertainty, it was compared to the statistical uncertainty from a $^{181}$Ta transmission measurement performed on a 12mm sample. The model uncertainty, expressed as a relative uncertainty on the transmission ($\Delta T / T$), was calculated from the standard deviation of the simulated $\langle T \rangle$ distributions.
+\subsection{A Quantitative Approach to Binning Strategy}
+The choice of energy bin width for averaging experimental data presents a fundamental challenge. The bins must be wide enough to contain a statistically representative sample of resonances, yet narrow enough that the average resonance parameters can be considered constant across the energy range. The methodology developed in this work provides a tool to quantitatively address the first of these competing requirements.
+
+Instead of relying on a heuristic, an evaluator can now calculate the model uncertainty ($\sigma_{C_T}$) for any chosen binning scheme. This allows for an informed, quantitative trade-off. To contextualize the magnitude of this model uncertainty, it was compared to the reported statistical uncertainty from a recent $^{181}$Ta transmission measurement \cite{brown2019}.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.85\linewidth]{Uncertainty Quantification/Figures/ta181-uq-vs-experimental.png}
-    \caption{Comparison of the self-shielding model uncertainty (orange) with the experimental statistical uncertainty (blue) for a 12mm $^{181}$Ta transmission measurement. The model uncertainty is a significant, and in some energy regions dominant, component of the total uncertainty budget.}
+    \includegraphics[width=0.85\linewidth]{Uncertainty Quantification/Figures/Brown_Comparison.png}
+    \caption{Comparison of the self-shielding model uncertainty (orange) with the reported experimental statistical uncertainty from Brown (2019) \cite{brown2019} for a 12mm $^{181}$Ta transmission measurement. The model uncertainty is a significant component of the total uncertainty budget.}
     \label{fig:ta181-uq-vs-experimental}
 \end{figure}
 
-As shown in \autoref{fig:ta181-uq-vs-experimental}, the calculated self-shielding model uncertainty is a significant, and in some energy regions, dominant component of the total uncertainty budget. At lower energies in the URR (3-5 keV), the model uncertainty is comparable in magnitude to the experimental uncertainty. This finding is critical: it confirms that the finite resonance effect is not a minor correction but a primary source of uncertainty that has been systematically neglected in previous evaluations. Ignoring this component leads directly to the underestimation of parameter uncertainties. Furthermore, this analysis provides a quantitative tool for experimental design, allowing for a trade-off analysis between energy bin width, sample thickness, and counting statistics to optimize future measurements.
+As shown in \autoref{fig:ta181-uq-vs-experimental}, the calculated self-shielding model uncertainty is a significant component of the total uncertainty budget. While it does not exceed the experimental uncertainty, it is of a comparable magnitude, particularly in the lower energy range of the URR. This finding is critical: it confirms that the finite resonance effect is not a minor correction but a primary source of uncertainty that has been systematically neglected in previous evaluations.
 
-\end{document} 
+This analysis provides a quantitative basis for an evaluator's binning strategy for the experimental data used in a fit. The goal is to select a bin width that is physically justifiable (i.e., the energy-dependence of parameters within the bin is not significant) while being fully aware of the magnitude of the model uncertainty that this choice implies. This is a more rigorous approach than relying on fixed rules, and it ensures that this model uncertainty is properly propagated into the final evaluation. It is important to distinguish this experimental data binning from the potentially coarser energy grid used to report the final evaluated parameters.
+
+\section{Propagating Model Uncertainty into an Evaluation}
+
+The preceding analysis has demonstrated that the finite resonance effect is a significant and previously unaccounted-for source of model uncertainty. The final step in this methodology is to incorporate this new uncertainty component into the parameter fitting procedure to achieve more realistic and physically meaningful results.
+
+The model uncertainty, quantified as the relative standard deviation of the correction factor ($\sigma_{C_T} / C_T$), is propagated to the measured transmission. It is treated as an additional source of uncorrelated uncertainty and is combined in quadrature with the experimental statistical uncertainty ($\sigma_{stats}$) for each data point $i$:
+
+\begin{equation}
+    \sigma_{i,total} = \sqrt{\sigma_{i,stats}^2 + \sigma_{i,C_T}^2}
+    \label{eq:total_uncert}
+\end{equation}
+
+By incorporating this combined uncertainty into the Bayesian fitting algorithm, the new model uncertainty component will have several important effects on the evaluation:
+\begin{itemize}
+    \item It will naturally increase the posterior uncertainty on the final fitted parameters, directly addressing the problem of unrealistically small uncertainties that require artificial inflation.
+    \item It will reduce the statistical weight of data points that have high model uncertainty (e.g., those from heavily self-shielded samples or overly narrow energy bins), leading to a more robust fit.
+    \item The resulting parameter covariance matrix will be a more accurate representation of the true parameter knowledge, as it now properly accounts for a significant source of systematic model error.
+\end{itemize}
+
+This procedure provides the necessary framework to resolve the deficiencies outlined at the beginning of this chapter. The practical application of this method, including its impact on the evaluation of average resonance parameters and the characterization of intermediate structure for $^{90}$Zr and $^{91}$Zr, will be the subject of the following chapter.
