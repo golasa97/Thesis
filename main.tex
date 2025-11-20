@@ -11,6 +11,40 @@
 \usepackage{multirow}
 \usepackage{adjustbox}
 \usepackage{subcaption}
+
+%\usepackage{draftwatermark}
+
+\usepackage{tikz} % Required for drawing the watermark in the foreground
+\usepackage{transparent} % Allows opacity so you can see figures underneath
+
+% 1. Create a simple toggle for the watermark
+\newif\ifDraftWatermark
+\DraftWatermarkfalse % Default to OFF
+
+% 2. Define the watermark content and position
+\newcommand{\DrawWatermark}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[
+      rotate=45,              % Angle
+      scale=10,               % Size
+      opacity=0.5,            % Transparency (0.1 = faint, 1.0 = solid)
+      text=black!30,           % Color (light gray)
+      align=center
+    ] at (current page.center) {
+        NOT FOR \\ REVIEW
+      %\textbf{NOT FOR\\ REVIEW}   % Your Text
+    };
+  \end{tikzpicture}%
+}
+
+% 3. Hook into the "Foreground" layer of every shipout (page build)
+\AddToHook{shipout/foreground}{%
+  \ifDraftWatermark % Only draw if our toggle is ON
+    \DrawWatermark
+  \fi
+}
+
+
 %\usepackage{xcolor}                           
 %\usepackage{listings}                         
                                               
@@ -160,6 +194,10 @@
 \label{chap:multiiso-transmission-correction}
 \input{Multi Isotope/multi-isotope}
 
+
+%\newpage
+%\DraftWatermarktrue
+
 \chapter{Capture Yield Correction}
 \label{chap:capture-yield-correction}
 \input{Capture Yield/capture-yield}
@@ -178,6 +216,7 @@
 \label{chap:conclusion}
 %\input{Conclusion/conclusion}
 
+%\DraftWatermarkfalse
 
 
 

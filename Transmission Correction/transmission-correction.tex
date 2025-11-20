@@ -1,17 +1,17 @@
-This chapter details and validates the procedure for calculating the theoretical average transmission to accurately fit parameters to self-shielded transmission measurements in the URR. As shown in \autoref{sec:correction-factor}, the theoretical average transmission is calculated as the product of the transmission of the average cross section, $e^{-n\langle \sigma \rangle}$, and a transmission correction factor $C_T$. While $C_T$ was previously defined in \autoref{eq:transmission-correction-factor} with an analytical form over an energy range, this procedure is not feasible in the URR where the true cross-section is unknown. Instead, SESH uses Monte Carlo integration in order to determine these energy-averaged quantities.
+This chapter details and validates the procedure for calculating the theoretical average transmission to accurately fit parameters to self-shielded transmission measurements in the URR. As shown in \autoref{sec:correction-factor}, the theoretical average transmission can be calculated as the product of the transmission of the average cross section, $e^{-n\langle \sigma \rangle}$, and a transmission correction factor $C_T$. While $C_T$ was previously defined in \autoref{eq:transmission-correction-factor} with an analytical form over an energy range, this procedure is not feasible in the URR where the true cross-section is unknown. Instead, SESH uses Monte Carlo integration in order to determine these energy-averaged quantities.
 
 \section{Transmission Correction for a Monotopic Sample}
 \label{sec:tc-monotopic}
 
-The calculation of the transmission correction factor is centered around a Monte Carlo simulation that generates a statistical ensemble of cross-section realizations. This process, described in detail in Chapters \ref{chap:theory} and \ref{chap:implementation}, simulates the inherent fluctuations of the cross-section in the URR. For each Monte Carlo history, a "resonance ladder" is constructed for each channel by sampling resonance widths from the Porter-Thomas distribution and level spacings from a weighted Wigner distribution. These stochastically generated parameters are then used within the SLBW formalism to produce a single realization of the total microscopic cross-section, $\sigma_i$.
+The calculation of the transmission correction factor is centered around a Monte Carlo simulation that generates a statistical population of cross-section realizations. This process, described in detail in Chapters \ref{chap:theory} and \ref{chap:implementation}, simulates the inherent fluctuations of the cross-section in the URR. For each Monte Carlo history, a ``resonance ladder'' is constructed for each channel by sampling resonance widths from the Porter-Thomas distribution and level spacings from a weighted Wigner distribution. These stochastically generated parameters are then used within the SLBW formalism to produce a single realization of the total microscopic cross-section, $\sigma_i$.
 
 For each sampled cross-section, a corresponding transmission value is calculated, $T_{i} = e^{-n\sigma_{i}}$, where $n$ is the sample thickness. By repeating this for a large number of histories, a set of sampled cross-sections $\left\{ \sigma_{1}, ..., \sigma_{N} \right\}$ and a corresponding set of transmissions $\left\{ T_{1}, ..., T_{N}\right\}$ are obtained. From these sets, their respective averages are computed:
 \begin{equation}
-    \langle \sigma \rangle = \frac{1}{N} \sum_{i=0}^{N} \sigma_{i}
+    \langle \sigma \rangle = \frac{1}{N} \sum_{i=1}^{N} \sigma_{i}
 \end{equation}
 and
 \begin{equation}
-    \langle T \rangle = \frac{1}{N} \sum_{i=0}^{N} T_{i}
+    \langle T \rangle = \frac{1}{N} \sum_{i=1}^{N} T_{i}
 \end{equation}
 
 From these averages, the correction factor defined in \autoref{sec:correction-factor} can be approximated as:
@@ -47,7 +47,7 @@ The results, shown in \autoref{fig:tc-resonance-pairs}, demonstrate that the inc
  \begin{figure}[H]
      \centering
      \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ResonancePairError.png}
-     \caption{Relative error between SESH and MCNP for the calculation shown in \autoref{fig:tc-resonance-pairs}.}
+     \caption{Relative error between SESH and MCNP for varying the total number of external resonances.}
      \label{fig:tc-resonance-pairs-error}
  \end{figure}
 
@@ -67,7 +67,7 @@ As shown in \autoref{fig:tc-thickness} and \autoref{fig:tc-thickness-error}, the
  \begin{figure}[H]
      \centering
      \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ct-verification-err.png}
-     \caption{Relative error between SESH and MCNP for the calculations shown in \autoref{fig:tc-thickness}.}
+     \caption{Relative error between SESH and MCNP for simulations of various thicknesses.}
      \label{fig:tc-thickness-error}
  \end{figure}
 
@@ -87,7 +87,7 @@ The results, presented in \autoref{fig:tc-temperature} and \autoref{fig:tc-tempe
  \begin{figure}[H]
      \centering
      \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ct_temperature_err.png}
-     \caption{Relative error between SESH and MCNP for the calculations shown in \autoref{fig:tc-temperature}.}
+     \caption{Relative error between SESH and MCNP at various temperatures for a 4mm thick $^{181}$Ta sample.}
      \label{fig:tc-temperature-error}
  \end{figure}
  
@@ -182,4 +182,4 @@ The verification exercises detailed in this chapter confirm that the SESH method
 
 A key investigation was the integration of the correction factor's derivative, $\partial C_T / \partial u$, into the fitting procedure. While the numerical estimation of this derivative via linear regression was shown to be statistically efficient, its impact on the final fitting results was found to be minimal. As shown in Table \ref{tab:fitting-error}, the improvement in the final $\chi^2/N$ when enabling the derivative calculation ($\partial C_T / \partial u = \text{ON}$) versus assuming it to be zero ($\partial C_T / \partial u = \text{OFF}$) is not substantial enough to justify the significant increase in computational time required for its calculation.
 
-Furthermore, historical workflows for self-shielding correction have implicitly operated under the assumption that $\partial C_T / \partial u = 0$. This precedent makes it challenging to validate the derivative-enabled approach against previously published evaluations, which constitute the bulk of available benchmarks. Given the minor improvement in fit quality versus the major computational cost and the lack of validation pathways, the most practical and efficient approach for future evaluations is to proceed with the assumption that the derivative of the correction factor is zero. This simplification provides results that are sufficiently accurate and consistent with established methodologies.
+Furthermore, historical workflows for self-shielding correction have implicitly operated under the assumption that $\partial C_T / \partial u = 0$. This precedent makes it challenging to validate the derivative-enabled approach against previously published evaluations. Given the minor improvement in fit quality versus the major computational cost and the lack of validation pathways, the most practical and efficient approach for future evaluations is to proceed with the assumption that the derivative of the correction factor is zero. This simplification provides results that are sufficiently accurate and consistent with established methodologies.
