@@ -1,114 +1,150 @@
-\begin{enumerate}
-    \item Introduction
-    \begin{enumerate}
-        \item Motivation for new evaluation
-        \begin{enumerate}
-            \item Importance of Zirconium isotopes in nuclear applications.
-            \item Known deficiencies in existing evaluations, namely the un-represented intermediate structure (doorway state) in $^{90}$Zr
-        \end{enumerate}
-        \item Objectives for this evaluation:
-        \begin{enumerate}
-            \item Application of the newly developed self-shielding and fitting methodology.
-            \item A more physically accurate set of unresolved resonance parameters for $^{90}$Zr and $^{91}$Zr
-            \item Proper characterization of the intermediate structure and more realistic parameter uncertainties.
-        \end{enumerate}
-    \end{enumerate}
-    
-    \item Methodology
-    \begin{enumerate}
-        \item Data Selection
-        \begin{enumerate}
-            \item Experimental data for the analysis: Musgrove et al. (1977), Guenther (1974), etc.
-            \item Benefit of using multiple thickness datasets to improve fit
-        \end{enumerate}
-        \item Initial Resonance Structure Analysis
-        \begin{enumerate}
-            \item Statistical properties of the existing $^{90}$Zr resonance data from Greg's evaluation
-            \item Autocorrelation function which demonstrates presence of intermediate structure
-            \item Dyson-Mehta $\Delta_3$ statistic for s-wave level scheme completeness; divergence from theory around 279 keV
-            \item Kolmogorov-Smirnov (KS) test confirming level spacings match Wigner distribution $(p = 0.988, \langle D \rangle = 9459.0 \text{ eV})$
-        \end{enumerate}
-        \item Data Binning Strategy
-        \begin{enumerate}
-            \item Selection process for optimal energy binning scheme
-            \item Justification for final bin widths based on balancing bin resonance statistics and energy-independence
-        \end{enumerate}
-    \end{enumerate}
-    \item Fitting
-    \begin{enumerate}
-        \item Fitting procedure with direct intermediate structure parameterization
-        \begin{enumerate}
-            \item New fitting capability for coupled compound nucleus (CN) and intermediate structure (IS) contributions
-            \item Direct parameterization method: p-wave strength function $(S_1)$ as a sum of constant CN and energy-dependent intermediate structure components: $$ S_1 = S_{CN} + \frac{1}{\pi} \sum \frac{W\gamma_{p}^{2}}{(E_p - E)^{2} + W^{2}}$$
-            Integration of self-shielding model into fitting code for simultaneous fit of all parameters
-        \end{enumerate}
-        \item Constraining parameters by fitting multiple thicknesses
-        \begin{enumerate}
-            \item High correlation between $S_0$ and $R_0^\infty$ in the average cross-section formulation.
-            \item Distinguishing parameter effects via self-shielded transmission; $S_0$ influencing variance and $R_0^\infty$ influencing the smooth background.
-            \item A unique solution from the intersecting contours of different thickness measurements.
-        \end{enumerate}
-        \item Incorporating Self-Shielding Model Uncertainty
-        \begin{enumerate}
-            \item Construction of total uncorrelated uncertainty: 
-            \begin{equation}
-                \sigma_i = \sqrt{\sigma_{i,stats}^2 + \sigma_{i,C_T}^2}
-            \end{equation}
-            \item Methodology for handling intra-dataset energy correlations via an exponential model.
-            \begin{equation}
-                V_{ij} = \sigma_i \sigma_j \exp\left[-\left(\frac{E_i - E_j}{\max(E_i, E_j)}\right)^2\right]
-            \end{equation}
-            \item No uncertainty propagation between different datasets.
-            \item Use of the complete covariance matrix in the Bayesian fitting algorithm.
-        \end{enumerate}
-    \end{enumerate}
-    \item Results: New Resonance Parameters for $^{90}$Zr and $^{91}$Zr
-    \begin{enumerate}
-        \item Intermediate Structure Parameters
-        \begin{enumerate}
-            \item Autocorrelation analysis confirming the presence of the intermediate structure.
-            \begin{equation}
-                C(\Delta) = \frac{1}{N}\sum_{i=1}^{N}\left[\sigma(E_{i})-\frac{1}{\Delta}\int_{E_{i}-\frac{\Delta}{2}}^{E_{i}+\frac{\Delta}{2}}\sigma(E_{i})dE\right]^{2}
-            \end{equation}
-            \item Final fitted IS parameters ($W, \gamma_p, E_p$).
-            \item Plot of the final fitted energy-dependent p-wave strength function.
-            \item Comparison of fit quality ($\chi^2$) demonstrating significant improvement with the IS model.
-        \end{enumerate}
-        \item Fitted CN Parameters
-        \begin{enumerate}
-            \item Final, newly evaluated average resonance parameters for the CN contributions.
-            \item Direct comparison with previous major evaluations (ENDF/B-VIII.1, JENDL, etc.).
-        \end{enumerate}
-        \item Final Parameter Uncertainties
-        \begin{enumerate}
-            \item The resulting uncertainties and covariance matrix for the new parameters.
-            \item More realistic and physically defensible uncertainty estimates from including the self-shielding model uncertainty.
-        \end{enumerate}
-    \end{enumerate}
-    \item ENDF-6 Representation Strategy
-    \begin{enumerate}
-        \item \textbf{The Challenge:} Representing a cross section with both statistical (CN) and non-statistical (IS) components.
-        \item \textbf{File 2 (Resonance Parameters):} The fitted average CN parameters, modeling statistical self-shielding effects.
-        \item \textbf{File 3 (Reaction Cross Sections):} A tabulated ``background'' cross section calculated as the difference between the total cross section (CN + IS) and the average CN cross section.
-        \item \textbf{The LSSF=0 Flag:} An instruction for processing codes to add the File 3 background to the File 2 resonance contribution.
-        \item \textbf{Benefit of the Approach:} Correctly preserves both statistical self-shielding properties (via File 2) and the non-statistical energy-dependent shape of the intermediate structure (via File 3).
-    \end{enumerate}
-    \item Validation and Impact
-    \begin{enumerate}
-        \item Plots of the final calculated cross section versus the binned experimental data.
-        \item Potential impact of the new evaluation on relevant integral benchmark calculations.
-    \end{enumerate}
-    \item Conclusion
-    \begin{enumerate}
-        \item Recap of the successful methodology application to $^{90}$Zr and $^{91}$Zr.
-        \item Summary of key findings: new parameters and characterization of the $^{90}$Zr intermediate structure.
-        \item The proposed ENDF-6 representation strategy.
-        \item The importance of model uncertainty and multi-thickness measurements for high-fidelity evaluations.
-    \end{enumerate}
-\end{enumerate}
+\section{Introduction}
+\label{sec:eval_introduction}
+
+Zirconium and its isotopes are significant materials in nuclear engineering, frequently used as cladding for nuclear fuel rods and in structural components within reactor cores due to their low thermal neutron absorption cross-section and high resistance to corrosion. Accurate nuclear data for Zirconium isotopes is therefore critical for the safe and efficient design and operation of nuclear reactors. However, existing nuclear data evaluations for Zirconium, particularly in the unresolved resonance region (URR), exhibit several known deficiencies.
+
+A prominent issue is the failure of the current ENDF/B-VIII.0 evaluations to properly model isotopic data. As shown in \autoref{fig:eval_deficiency_structure}, the evaluations are using infinitely dilute cross-sections (File 3 data) derived from natural Zirconium measurements, which are then applied incorrectly to isotopic evaluations. This leads to non-physical artifacts, such as the propagation of resonant structures unique to $^{90}$Zr into the evaluation for $^{91}$Zr, where no such structure is experimentally observed.
+
+\begin{figure}[h!]
+    \centering
+    % \includegraphics[width=0.8\textwidth]{path/to/your/figure.png}
+    \caption{Illustration of deficiencies in the ENDF/B-VIII.0 evaluation, showing the incorrect propagation of resonant structure from $^{90}$Zr to $^{91}$Zr data. (Placeholder)}
+    \label{fig:eval_deficiency_structure}
+\end{figure}
+
+Furthermore, as illustrated in Figure \ref{fig:eval_deficiency_file2}, the average resonance parameters (File 2 data) for $^{91}$Zr show significant deviation from experimental data, suggesting that the current parameterizations do not accurately represent isotopic behavior. While the evaluation for natural Zirconium may appear adequate, this is often the result of compensating errors between the different isotopes rather than a physically accurate representation.
+
+\begin{figure}[h!]
+    \centering
+    % \includegraphics[width=0.8\textwidth]{path/to/your/figure.png}
+    \caption{Comparison of binned experimental transmission data for Zr isotopes against calculations using only File 2 parameters from ENDF/B-VIII.1, showing significant discrepancies. (Placeholder)}
+    \label{fig:eval_deficiency_file2}
+\end{figure}
+
+Additionally, a key deficiency is the un-represented intermediate structure in the p-wave neutron cross-section of $^{90}$Zr. This non-statistical effect, often attributed to a doorway state mechanism, is a known feature of the cross-section that is not captured by the statistical treatment of the URR in current evaluations. This omission, combined with the other issues, leads to inaccuracies in reactor physics calculations that are sensitive to the detailed resonance structure.
+
+This work aims to address these deficiencies by performing a new evaluation of the URR for $^{90}$Zr and $^{91}$Zr. The primary objectives of this evaluation are threefold. First, it serves as a practical application of the advanced self-shielding correction and fitting methodologies developed in the preceding chapters. This includes the direct fitting of experimental transmission data without pre-processing, made possible by the integration of the SESH code into SAMMY. Second, the evaluation seeks to produce a more physically accurate and defensible set of average resonance parameters for both $^{90}$Zr and $^{91}$Zr by leveraging these new tools. Finally, a key goal is the explicit characterization of the intermediate structure in $^{90}$Zr and the derivation of more realistic parameter uncertainties by propagating the model uncertainty associated with the self-shielding correction.
+
+\section{Methodology}
+\label{sec:eval_methodology}
+
+\subsection{Data Selection}
+\label{ssec:eval_data_selection}
+A comprehensive evaluation requires a diverse set of high-quality experimental data. For this analysis of Zirconium isotopes, the primary data sourced were total cross-section and transmission measurements, as these are most sensitive to the unresolved resonance region (URR) parameters being investigated. The key datasets selected for this work are summarized in \autoref{tab:datasets}.
+
+\begin{table}[h!]
+    \centering
+    \caption{A summary of the experimental datasets selected for the evaluation. The Tagliente et al. data was not used in the final analysis.}
+    \label{tab:datasets}
+    \begin{tabular}{l l l l}
+        \hline
+        \textbf{Author} & \textbf{Isotope} & \textbf{Reaction} & \textbf{Details} \\
+        \hline
+        Musgrove (1977) \cite{musgrove1977neutron90} & $^{90}$Zr & Transmission & 97.7\% enriched, 0.0827 at/b \\
+        Green (1973) \cite{green1973total}       & $^{90}$Zr & Transmission & 97.7\% enriched, 0.0799 at/b \\
+        Ohgama (2005) \cite{ohgama2006measurement}     & $^{90}$Zr & Capture XS   & Pointwise data at 0.550 MeV \\
+        Macklin (1963) \cite{macklin1963}   & $^{90}$Zr & Capture XS   & Pointwise data at 0.030 MeV \\
+        Musgrove (1977) \cite{musgrove1977neutron91} & $^{91}$Zr & Transmission & 89.2\% enriched \\
+        Ohgama (2005) \cite{ohgama2005measurement}     & $^{91}$Zr & Capture XS   & [0.02, 0.550] MeV range \\
+        Gan (2024) \cite{gan2024}           & $^{91}$Zr & Capture XS   & [0.026, 0.177] MeV range \\
+        \hline
+    \end{tabular}
+\end{table}
 
 
-    
+A critical aspect of the data selection strategy was the inclusion of measurements performed on samples of varying thicknesses. As established in \autoref{chap:multiiso-transmission-correction}, the use of multiple sample thicknesses is crucial for constraining the fit and breaking the strong correlation between the s-wave strength function ($S_0$) and the potential scattering radius ($R_0^\infty$). The thicker samples induce stronger self-shielding effects, which are primarily driven by the strength function, while the thinner samples are more sensitive to the background cross section determined by the scattering radius. Fitting these datasets simultaneously provides a much more robust determination of both parameters.
+
+A significant challenge in this evaluation is the limited availability of experimental capture data for Zirconium isotopes in the URR. While capture data would provide direct sensitivity to the radiation width ($\Gamma_\gamma$), the scarcity of such measurements means that the radiation width is often poorly constrained and must be either fixed to values from the resolved region or fitted with large uncertainty. This evaluation, therefore, relies principally on transmission and total cross-section data to determine the URR parameters.
+
+\section{Methodology}
+    \subsection{Initial Resonance Structure Analysis and URR Energy Bounds}
+\label{ssec:eval_resonance_analysis}
+A full statistical analysis of the resolved resonance region (RRR) was not performed as part of this work, as a concurrent evaluation has established the statistical quality of the existing resonance parameters \cite{GregEvaluationInProgress}. That analysis confirmed that the resolved resonances for $^{90}$Zr meet the relevant statistical checks up to 800 keV, and for $^{91}$Zr up to 220 keV.
+
+Based on these findings, the energy bounds for this unresolved resonance region (URR) evaluation were updated from previous evaluations. For $^{90}$Zr, the URR is defined from 800 keV to 1.78 MeV. For $^{91}$Zr, the URR is defined from 220 keV to 1.24 MeV. In both cases, the lower bound was raised to exclude the well-behaved resolved region, and the upper bound is determined by the energy of the first inelastic scattering level for each isotope. This redefinition allows the URR analysis to focus on the energy ranges where statistical descriptions are most necessary and valid.
+
+    \subsection{Data Binning Strategy}
+\label{ssec:eval_binning}
+The selection of an appropriate energy binning scheme is a critical step in any URR analysis, as it directly impacts the validity of the self-shielding correction factors. The ideal energy bin must satisfy two competing requirements: it must be wide enough to contain a statistically significant number of resonances, yet narrow enough that the average resonance parameters can be assumed to be constant across its energy range.
+
+For an isotope like $^{90}$Zr, with an average s-wave level spacing of approximately 8.3 keV, satisfying both conditions is challenging. To achieve a truly statistical sample of, for example, 200 resonances per bin would require a bin width of about 1.6 MeV. This range is far too wide to assume constant average parameters, especially given the presence of the intermediate structure.
+
+Given this conflict, a pragmatic approach was adopted. The experimental data was binned with a constant bin width of 100 keV. This width was chosen as a compromise: it is narrow enough to resolve the general shape of the energy-dependent cross section, including the broad intermediate structure, while still being wide enough to average over several resonances per bin. While not perfectly satisfying either condition, this choice provides a reasonable balance for performing the fitting procedure. The model uncertainty introduced by this "finite resonance effect" (i.e., having a non-statistical number of resonances per bin) is addressed and propagated into the final parameter uncertainties, as discussed in \autoref{chap:uncertainty}.
+%    \item Fitting
+%    \begin{enumerate}
+%        \item Fitting procedure with direct intermediate structure parameterization
+%        \begin{enumerate}
+%            \item New fitting capability for coupled compound nucleus (CN) and intermediate structure (IS) contributions
+%            \item Direct parameterization method: p-wave strength function $(S_1)$ as a sum of constant CN and energy-dependent intermediate structure components: $$ S_1 = S_{CN} + \frac{1}{\pi} \sum \frac{W\gamma_{p}^{2}}{(E_p - E)^{2} + W^{2}}$$
+%            Integration of self-shielding model into fitting code for simultaneous fit of all parameters
+%        \end{enumerate}
+%        \item Constraining parameters by fitting multiple thicknesses
+%        \begin{enumerate}
+%            \item High correlation between $S_0$ and $R_0^\infty$ in the average cross-section formulation.
+%            \item Distinguishing parameter effects via self-shielded transmission; $S_0$ influencing variance and $R_0^\infty$ influencing the smooth background.
+%            \item A unique solution from the intersecting contours of different thickness measurements.
+%        \end{enumerate}
+%        \item Incorporating Self-Shielding Model Uncertainty
+%        \begin{enumerate}
+%            \item Construction of total uncorrelated uncertainty: 
+%            \begin{equation}
+%                \sigma_i = \sqrt{\sigma_{i,stats}^2 + \sigma_{i,C_T}^2}
+%            \end{equation}
+%            \item Methodology for handling intra-dataset energy correlations via an exponential model.
+%            \begin{equation}
+%                V_{ij} = \sigma_i \sigma_j \exp\left[-\left(\frac{E_i - E_j}{\max(E_i, E_j)}\right)^2\right]
+%            \end{equation}
+%            \item No uncertainty propagation between different datasets.
+%            \item Use of the complete covariance matrix in the Bayesian fitting algorithm.
+%        \end{enumerate}
+%    \end{enumerate}
+%    \item Results: New Resonance Parameters for $^{90}$Zr and $^{91}$Zr
+%    \begin{enumerate}
+%        \item Intermediate Structure Parameters
+%        \begin{enumerate}
+%            \item Autocorrelation analysis confirming the presence of the intermediate structure.
+%            \begin{equation}
+%                C(\Delta) = \frac{1}{N}\sum_{i=1}^{N}\left[\sigma(E_{i})-\frac{1}{\Delta}\int_{E_{i}-\frac{\Delta}{2}}^{E_{i}+\frac{\Delta}{2}}\sigma(E_{i})dE\right]^{2}
+%            \end{equation}
+%            \item Final fitted IS parameters ($W, \gamma_p, E_p$).
+%            \item Plot of the final fitted energy-dependent p-wave strength function.
+%            \item Comparison of fit quality ($\chi^2$) demonstrating significant improvement with the IS model.
+%        \end{enumerate}
+%        \item Fitted CN Parameters
+%        \begin{enumerate}
+%            \item Final, newly evaluated average resonance parameters for the CN contributions.
+%            \item Direct comparison with previous major evaluations (ENDF/B-VIII.1, JENDL, etc.).
+%        \end{enumerate}
+%        \item Final Parameter Uncertainties
+%        \begin{enumerate}
+%            \item The resulting uncertainties and covariance matrix for the new parameters.
+%            \item More realistic and physically defensible uncertainty estimates from including the self-shielding model uncertainty.
+%        \end{enumerate}
+%    \end{enumerate}
+%    \item ENDF-6 Representation Strategy
+%    \begin{enumerate}
+%        \item \textbf{The Challenge:} Representing a cross section with both statistical (CN) and non-statistical (IS) components.
+%        \item \textbf{File 2 (Resonance Parameters):} The fitted average CN parameters, modeling statistical self-shielding effects.
+%        \item \textbf{File 3 (Reaction Cross Sections):} A tabulated ``background'' cross section calculated as the difference between the total cross section (CN + IS) and the average CN cross section.
+%        \item \textbf{The LSSF=0 Flag:} An instruction for processing codes to add the File 3 background to the File 2 resonance contribution.
+%        \item \textbf{Benefit of the Approach:} Correctly preserves both statistical self-shielding properties (via File 2) and the non-statistical energy-dependent shape of the intermediate structure (via File 3).
+%    \end{enumerate}
+%    \item Validation and Impact
+%    \begin{enumerate}
+%        \item Plots of the final calculated cross section versus the binned experimental data.
+%        \item Potential impact of the new evaluation on relevant integral benchmark calculations.
+%    \end{enumerate}
+%    \item Conclusion
+%    \begin{enumerate}
+%        \item Recap of the successful methodology application to $^{90}$Zr and $^{91}$Zr.
+%        \item Summary of key findings: new parameters and characterization of the $^{90}$Zr intermediate structure.
+%        \item The proposed ENDF-6 representation strategy.
+%        \item The importance of model uncertainty and multi-thickness measurements for high-fidelity evaluations.
+%    \end{enumerate}
+%\end{enumerate}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 %         \item Advanced Fitting of Self-Shielded Data
 %             \begin{itemize}
 %                 \item Describe the direct fitting approach implemented in SAMMY.
