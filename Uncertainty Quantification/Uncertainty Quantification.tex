@@ -85,6 +85,14 @@ A key question in URR analysis is how wide an energy bin must be to be considere
 
 \autoref{fig:ct-error-vs-binwidth} shows the relative uncertainty of the correction factor, $\Delta C_T / C_T$, as a function of the number of resonances included in an energy bin centered at 3.5 keV. The uncertainty decreases predictably as the number of resonances increases, as expected from statistical sampling. However, the magnitude of the uncertainty is strongly dependent on the sample thickness. For the thinnest sample (3mm), the uncertainty is relatively small, dropping below 2\% with only a few dozen resonances. In contrast, for the heavily self-shielded 12mm sample, the uncertainty remains above 5\% even when 50 resonances are included in the bin. At the heuristic of 10 resonances per bin, the model uncertainty is nearly 10\% for the 12mm sample, a significant value that cannot be ignored. This demonstrates that a single heuristic for bin size is not universally applicable; the required number of resonances depends heavily on the degree of self-shielding.
 
+The consequence of this self-shielding uncertainty having experimental dependencies beyond just the resonance statistics introduces complexity into the binning structure when it comes to performing an evaluation.
+
+A thin sample can have a more certain self-shielding correction factor
+Depending on the isotope, it may not be feasible to get good statistics from a thin, minimally self-shielded sample
+Conversely, a thicker sample would have a different requirement for how wide a bin has to be to optimize the self-shielding correction assumptions.
+That bin could end up being prohibitively wide for both thin and thick sample transmissions.
+Instead, a better method would be to remove that statistical constraint and incorporate that uncertainty into the evaluation.
+
 \subsection{A Quantitative Approach to Binning Strategy}
 The choice of energy bin width for averaging experimental data presents a fundamental challenge. The bins must be wide enough to contain a statistically representative sample of resonances, yet narrow enough that the average resonance parameters can be considered constant across the energy range. The methodology developed in this work provides a tool to quantitatively address the first of these competing requirements.
 
