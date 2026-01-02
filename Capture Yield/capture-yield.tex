@@ -1,4 +1,10 @@
-Another important quantity to correct for in the unresolved resonance region is capture yield. In these experiments, there are two phenomena at play: first the resonance self shielding, as described in \autoref{sec:resonance-self-shielding}. The second effect is called multiple scattering.
+\section{Introduction}
+\label{sec:capture-yield-introduction}
+
+The self-shielding correction framework developed and validated for transmission measurements in \autoref{chap:transmission-correction} and \autoref{chap:multiiso-transmission-correction} is now extended to another critical experimental observable: capture yield. Accurately modeling capture yield in the unresolved resonance region (URR) requires accounting for two distinct physical phenomena. The first is the resonance self-shielding effect, driven by the statistical fluctuations in the microscopic cross section, which has been the primary focus of the preceding chapters. The second, which is particularly pronounced in capture experiments, is the effect of neutron multiple scattering within the measurement sample.
+
+This chapter will not repeat the foundational discussion on the underlying physics of Monte Carlo cross-section generation and the statistical nature of resonance self-shielding, as these topics have been thoroughly described in \autoref{chap:implementation}, \autoref{chap:transmission-correction}, and \autoref{chap:multiiso-transmission-correction}. Instead, it will focus on the theoretical and implementation aspects unique to the capture yield correction. Specifically, this chapter details the physics of the multiple scattering correction, presents a verification of the physics model against a high-fidelity MCNP benchmark, and validates the integrated fitting procedure using synthetic data.
+
 
 \section{Multiple Scattering in a Cylindrical Sample}
 \label{sec:multiple-scattering}
@@ -90,10 +96,10 @@ Therefore, there are three distances that must be calculated:
     \caption{Example of the face intersection scheme, resulting in $d_{front}$ being selected as the shortest face until the particle exits.}
     \label{fig:ms-face-intersection}
 \end{figure}
-The $d_{front}$ and $d_{back}$ terms are solved with
+The distances to the planar front and back faces ($d_{front}$ and $d_{back}$) are determined. A finite, positive distance is calculated only if the neutron's path is directed towards the face in question; otherwise, the distance is treated as infinite. Using $\Omega_w^k$ to denote the z-component of the direction vector $\overrightarrow{\Omega}^k$, the distances are:
 \begin{align}
-    d_{front} &= \frac{z^k}{\Omega_{z}^{k}} \\
-    d_{back} &= \frac{n - z^{k}}{\Omega^{k}_{z}}
+    d_{front} &= \begin{cases} -z^k / \Omega_w^k, & \text{if } \Omega_w^k < 0 \\ \infty, & \text{otherwise} \end{cases} \\
+    d_{back} &= \begin{cases} (n - z^k) / \Omega_w^k, & \text{if } \Omega_w^k > 0 \\ \infty, & \text{otherwise} \end{cases}
 \end{align}
 while $d_{cyl}$ is is determined as
 \begin{equation}
@@ -107,21 +113,16 @@ where
     c &= R^2 - \left( x^k \right)^2 - \left( y^k \right)^2
 \end{align}
 
-Once the $d_{front}, d_{back}, \text{ and } d_{cyl}$ distances are determined, the actual path length until escape is
+The path length until the neutron escapes the sample, $d^k$, is the shortest of these three potential path lengths:
 \begin{equation}
-    d^k =
-    \begin{cases}
-        \min{ \left( d_{cyl}, d_{front} \right)},   \qquad &\Omega_{w}^k < 0,\\
-        d_{cyl},                                    \qquad &\Omega_{w}^k = 0, \\
-        \min{ \left( d_{cyl}, d_{back} \right)},    \qquad &\Omega_{w}^k > 0,\\
-    \end{cases}
+    d^k = \min{\left(d_{front}, d_{back}, d_{cyl}\right)}
 \end{equation}
 
 Next, a new set of total, capture, and elastic cross sections are sampled at energy $E^k$, which are then used to determine the sampled distance until the next collision,
 \begin{equation}
     \label{eq:free-path-sampling}
     s^k = -\frac{1}{\overline{\sigma_{t} }^{k} }  \ln{\left\{
-                1 - \zeta \left[ 1 - \exp{\left( \overline{\sigma_{t}}^{k} d^k \right)} \right]
+                1 - \zeta \left[ 1 - \exp{\left( \overline{\sigma_{t}}^{k} d^k \right)} \right] 
     \right\}}
 \end{equation}
 where $\zeta$ is a randomly selected value between 0 and 1. This distance term $s^{k}$ is then used to calculate the location of the next scattering event,
@@ -221,11 +222,12 @@ Given the sampled distance $s^{k}$,
     \gamma_{cap}^{k} &= \gamma_{tot}^{k} \frac{\overline{\sigma_{\gamma}}^{k}}{\overline{\sigma_{t}}^{k}}
 \end{align}
 
-The neutron weight is determined as a function of the non-captured fraction. Starting out with a weight $w^{0}=1$, the weight of a surviving neutron is the product of each non-captured fraction,
+The simulation employs an implicit capture (or survival biasing) scheme. At each collision, the neutron is forced to scatter, and its statistical weight is reduced by the scattering probability. The "lost" weight is tallied as the capture contribution. Starting with an initial weight $w^{0}=1$, the weight after the $k^{th}$ collision is:
 \begin{equation}
     \label{eq:neutron-weight}
-    w^{k} = w^{k-1}\gamma_{el}^{k}
+    w^{k} = w^{k-1}\gamma_{sc}^{k}
 \end{equation}
+where $\gamma_{sc}^{k}$ is the scattering interaction fraction from \autoref{eq:el-frac}.
 
 This quantity is used in two ways; first, the factor is used to determine the total number of collisions $K$ that a neutron will experience before it is no longer statistically significant. If the weight ends up less than some cutoff factor, $\varepsilon$, the total number of collisions is reached,
 \begin{equation}
@@ -275,7 +277,7 @@ It should be noted that the average capture cross section $\langle \overline{\si
         \begin{equation}
             E' = E \frac{A^2 + 2 A \mu_c + 1}{\left( A + 1 \right)^2}
         \end{equation}
-        in which
+in which
         \begin{equation}
             \mu_c = \cos\phi_c
         \end{equation}
@@ -312,3 +314,99 @@ It should be noted that the average capture cross section $\langle \overline{\si
         \caption{Comparison between improved and original algorithm regards to sampled radius}
         \label{fig:sampling-1d-comparison}
     \end{figure}
+
+
+\section{Verification of the Capture Yield Physics Model}
+\label{sec:capture-yield-verification}
+
+With the theoretical framework for the multiple scattering correction established, it is essential to verify that the physics implemented in the SESH code is accurate. The primary objective of this section is to validate the core physics of the multiple scattering and capture yield algorithm. This is achieved by comparing the results from SESH against a high-fidelity benchmark, ensuring that the model can be trusted before it is integrated into the full fitting procedure. To avoid confounding issues discovered in previous chapters, a clean, single-isotope benchmark case is used.
+
+\subsection{Validation Strategy}
+\label{ssec:capture-yield-validation-strategy}
+
+A direct verification of the capture yield correction for a multi-isotope sample (such as natural Zirconium) against a code like MCNP presents a significant challenge. As discovered during the multi-isotope transmission validation (\autoref{chap:multiiso-transmission-correction}), a variance-conservation issue exists in the probability table (P-Table) method used by MCNP and NJOY for multi-isotope systems. This discrepancy, which causes MCNP to under-predict self-shielding effects, would make it impossible to distinguish between a true error in the SESH capture model and a known issue in the MCNP benchmark itself.
+
+Therefore, the validation strategy is to isolate and verify the new physics kernel—the multiple scattering algorithm—using a well-behaved, single-isotope case where the P-Table issue is not present. For this purpose, \textsuperscript{181}Ta is chosen as the benchmark nuclide. This choice is justified for several reasons:
+\begin{itemize}
+    \item It is a single, stable isotope, which eliminates the multi-isotope variance problem.
+    \item It has a well-behaved and well-understood resonance structure in the URR, making it an ideal statistical case.
+    \item It was used extensively for the transmission correction validation in \autoref{chap:transmission-correction}, providing a consistent basis for comparison.
+\end{itemize}
+
+    In addition to the parameters of sample thickness and temperature, which were central to the transmission validation, the capture yield calculation introduces further geometric dependencies. Specifically, the correction is sensitive to the sample radius and the radius of the incident neutron beam. A comprehensive validation must therefore investigate the model's performance across three key physical parameters:
+\begin{itemize}
+    \item \textbf{Sample Thickness ($n$):} Varied to assess the model's handling of increased multiple scattering probability.
+    \item \textbf{Sample Radius ($R_{sample}$):} Varied to test the geometric accuracy of the particle transport simulation.
+    \item \textbf{Beam Radius ($R_{beam}$):} Varied from zero up to the sample radius to verify the model's response to different experimental source configurations.
+\end{itemize}
+
+    The expected physical behavior is that the capture yield correction will increase as the beam radius decreases (due to neutrons having a longer average path length within the sample before escape) and decrease as the sample radius decreases (as neutrons are more likely to escape from the sides). By benchmarking the SESH capture yield calculation for \textsuperscript{181}Ta against a carefully constructed MCNP model across these parameters, the core multiple scattering and particle transport physics can be validated with confidence.
+
+\subsection{MCNP Benchmark for Ta-181}
+\label{ssec:mcnp-benchmark-ta181}
+
+To create a "ground truth" for the capture yield correction, a high-fidelity MCNP6 \cite{mcnp} benchmark was established. The model setup was essentially identical to the one used for the transmission validation described in \autoref{ssec:mcnp-benchmark-model}, simulating a mono-directional neutron beam on a cylindrical \textsuperscript{181}Ta sample. The key difference was the use of tallies to determine the total capture probability $\langle p \rangle$, allowing for a direct calculation of the benchmark $C_C$ value. The simulation was performed across a matrix of physical parameters to fully test the model:
+\begin{itemize}
+    \item \textbf{Sample Thicknesses:} 2mm, 4mm, 8mm, and 12mm.
+    \item \textbf{Sample Radii:} Varied to match typical experimental setups.
+    \item \textbf{Beam Radii:} Varied from a pencil beam ($R_{beam} \approx 0$) up to the full sample radius ($R_{beam} = R_{sample}$).
+\end{itemize}
+This comprehensive set of benchmark cases allows for a thorough validation of the SESH model's response to changes in sample geometry and beam configuration.
+
+\subsection{Comparison and Results}
+\label{ssec:comparison-and-results}
+
+The capture correction factor, $C_C$, calculated by the modernized SESH code was compared directly against the MCNP benchmark results for \textsuperscript{181}Ta. The comparison was performed across the full matrix of sample thicknesses, sample radii, and beam radii previously described, as well as at various temperatures.
+
+The results for varying sample thickness, shown in \autoref{fig:cy-verification-ta181} and \autoref{fig:cy-verification-err-ta181}, demonstrate excellent agreement between SESH and MCNP for the thinner samples. As sample thickness increases, SESH begins to show a small, systematic under-prediction of the correction factor, particularly at lower energies where self-shielding is strongest. However, even for the thickest (12mm) sample, the relative error generally remains below 2\%. The strong agreement across different temperatures also indicates that Doppler broadening is handled correctly within the multiple scattering simulation.
+
+The validation study also confirmed the expected physical trends with respect to sample and beam geometry, as shown in \autoref{fig:cy-verification-sample-radius}, \autoref{fig:cy-verification-err-sample-radius}, \autoref{fig:cy-verification-beam-radius}, and \autoref{fig:cy-verification-err-beam-radius}. The capture yield correction was observed to increase as the beam radius decreases and to decrease as the sample radius decreases. Agreement between SESH and MCNP was very strong in cases where the beam radius was equal to the sample radius. As the beam radius approached zero (a pencil beam), a small but observable discrepancy emerged, though it was not considered problematic for practical applications. This is a favorable result, as the experimental data used in this work were taken with a beam that covers the entire sample face ($R_{beam} = R_{sample}$). 
+
+\begin{figure}[h!]
+    \centering
+    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_ta181.png}
+    \caption{Comparison of the capture correction factor ($C_C$) for \textsuperscript{181}Ta calculated by SESH and MCNP for various sample thicknesses.}
+    \label{fig:cy-verification-ta181}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_err_ta181.png}
+    \caption{Relative error between the SESH and MCNP calculation of $C_C$ for \textsuperscript{181}Ta for various sample thicknesses.}
+    \label{fig:cy-verification-err-ta181}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_sample_radius.png}
+    \caption{Comparison of the capture correction factor ($C_C$) for \textsuperscript{181}Ta calculated by SESH and MCNP for various sample radii.}
+    \label{fig:cy-verification-sample-radius}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_err_sample_radius.png}
+    \caption{Relative error between the SESH and MCNP calculation of $C_C$ for \textsuperscript{181}Ta for various sample radii.}
+    \label{fig:cy-verification-err-sample-radius}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_beam_radius.png}
+    \caption{Comparison of the capture correction factor ($C_C$) for \textsuperscript{181}Ta calculated by SESH and MCNP for various beam radii.}
+    \label{fig:cy-verification-beam-radius}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_err_beam_radius.png}
+    \caption{Relative error between the SESH and MCNP calculation of $C_C$ for \textsuperscript{181}Ta for various beam radii.}
+    \label{fig:cy-verification-err-beam-radius}
+\end{figure}
+
+\subsection{Conclusion on Physics Model Validity}
+\label{ssec:conclusion-physics-model}
+
+The strong agreement between the SESH calculations and the MCNP benchmark for the \textsuperscript{181}Ta case validates the core physics of the multiple scattering and capture yield algorithm. The observed small discrepancies for very thick samples are consistent with trends seen in the transmission validation (\autoref{chap:transmission-correction}) and define the practical limits of the model's applicability. This successful verification provides the necessary confidence to proceed with integrating this capability into the full SAMMY fitting workflow.
+
+

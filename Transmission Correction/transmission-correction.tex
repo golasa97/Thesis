@@ -26,6 +26,7 @@ The accuracy of this method will be validated using $^{181}$Ta, for which a rece
 Before integrating the transmission correction into the fitting procedure, it is essential to verify that SESH accurately calculates the correction factor itself. The verification was performed by comparing the results from SESH to those from a high-fidelity model of the experiment constructed using MCNP \cite{mcnp}. This MCNP model serves as a computational benchmark, providing a ground truth against which the statistical methods in SESH can be compared. Three key physical parameters that could influence the correction factor were investigated: the number of external resonance pairs used in the calculation, the physical thickness of the sample, and the temperature of the sample.
 
 \subsection{MCNP Benchmark Model}
+\label{ssec:mcnp-benchmark-model}
 The MCNP model was configured to simulate neutron transmission through a $^{181}$Ta sample. The cross-section data for the simulation was prepared from the ENDF/B-VIII.1 evaluation \cite{endf-manual} and processed into a pointwise format using NJOY \cite{njoy}. By using the exact, finely-resolved cross sections from a formal evaluation, the MCNP simulation can directly calculate the true average transmission, $\langle T \rangle$, and the transmission of the average cross section, $e^{-n\langle\sigma\rangle}$, over a given energy group. The benchmark correction factor is then calculated as:
 \begin{equation}
     C_{T, \text{MCNP}} = \frac{\langle T \rangle_{\text{P-Table=ON}}}{\langle T \rangle_{\text{P-Table=OFF}}}
