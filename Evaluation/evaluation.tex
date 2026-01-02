@@ -56,8 +56,7 @@ A critical aspect of the data selection strategy was the inclusion of measuremen
 
 A significant challenge in this evaluation is the limited availability of experimental capture data for Zirconium isotopes in the URR. While capture data would provide direct sensitivity to the radiation width ($\Gamma_\gamma$), the scarcity of such measurements means that the radiation width is often poorly constrained and must be either fixed to values from the resolved region or fitted with large uncertainty. This evaluation, therefore, relies principally on transmission and total cross-section data to determine the URR parameters.
 
-\section{Methodology}
-    \subsection{Initial Resonance Structure Analysis and URR Energy Bounds}
+\subsection{Initial Resonance Structure Analysis and URR Energy Bounds}
 \label{ssec:eval_resonance_analysis}
 A full statistical analysis of the resolved resonance region (RRR) was not performed as part of this work, as a concurrent evaluation has established the statistical quality of the existing resonance parameters \cite{GregEvaluationInProgress}. That analysis confirmed that the resolved resonances for $^{90}$Zr meet the relevant statistical checks up to 800 keV, and for $^{91}$Zr up to 220 keV.
 
@@ -70,6 +69,132 @@ The selection of an appropriate energy binning scheme is a critical step in any 
 For an isotope like $^{90}$Zr, with an average s-wave level spacing of approximately 8.3 keV, satisfying both conditions is challenging. To achieve a truly statistical sample of, for example, 200 resonances per bin would require a bin width of about 1.6 MeV. This range is far too wide to assume constant average parameters, especially given the presence of the intermediate structure.
 
 Given this conflict, a pragmatic approach was adopted. The experimental data was binned with a constant bin width of 100 keV. This width was chosen as a compromise: it is narrow enough to resolve the general shape of the energy-dependent cross section, including the broad intermediate structure, while still being wide enough to average over several resonances per bin. While not perfectly satisfying either condition, this choice provides a reasonable balance for performing the fitting procedure. The model uncertainty introduced by this "finite resonance effect" (i.e., having a non-statistical number of resonances per bin) is addressed and propagated into the final parameter uncertainties, as discussed in \autoref{chap:uncertainty}.
+
+
+\subsection{Fitting the Data}
+\label{sec:eval_gd_fit_simple}
+
+\subsubsection{M+W Limitation}
+The traditional fitting workflow in SAMMY's URR fitting module is based on the inverse Bayesian ``$M+W$'' update scheme, which computes an updated parameter vector by applying a single correction to an initial guess. In the notation of the $M+W$ derivation, the update is posed as
+\begin{equation}
+\mathbf{U}' = \mathbf{U} + \Delta\theta,
+\end{equation}
+with an updated parameter covariance
+\begin{equation}
+M' = \left(M^{-1} + W\right)^{-1},
+\end{equation}
+where $M$ is the prior covariance and $W$ is a model-precision term.
+A key limitation of the method is that it is fundamentally derived under a \emph{linear} model assumption, while the URR observables of interest (cross section, transmission, capture yield) are characteristically nonlinear.
+
+In practice, this nonlinearity is handled by iterating a correction equation that retains the same linearized form,
+\begin{equation}
+\mathbf{y} = G^{T}V^{-1}\left[\mathbf{D} - \mathbf{T}(\mathbf{U}) + G\Delta\theta\right],
+\end{equation}
+using successive updates of $\Delta\theta$ until the correction stabilizes. However, the procedure remains anchored to an update of the form ``initial value plus a correction'' (i.e., $\mathbf{U}'=\mathbf{U}+\Delta\theta$). When the model is strongly nonlinear, this linearized correction can become a poor proxy for the true local descent direction, and the resulting updates may overshoot or wander unless the linear approximation remains accurate over the full step.
+
+A second drawback is that $M+W$ does not operate directly on the physical parameter vector $\mathbf{p}$.
+For numerical and constraint-handling reasons, parameters are converted to an internal \emph{$U$-space} intended to be ``more linear'' (e.g., logarithmic transforms for strictly positive parameters). In the URR context, this requires explicit, parameter-type-dependent transforms such as
+\begin{equation}
+u_i =
+\begin{cases}
+\ln(p_i) & \text{if } p_i \in \{S_\ell,\Gamma_\gamma\},\\
+p_i & \text{if } p_i \in \{R_\ell^\infty,\Gamma_f\},
+\end{cases}
+\end{equation}
+and an accompanying covariance transformation back to physical space after the fit.
+While effective in the original narrowly-scoped URR model, this coupling between the minimizer and the \emph{interpretation} of each parameter reduces flexibility: adding new models or new parameter types requires extending the fitter with additional special-case logic, rather than keeping the minimization algorithm model-agnostic.
+
+These limitations motivated the development of a new minimization capability based on direct $\chi^2$ minimization in physical parameter space, using an iterative gradient-descent update with controlled step size. The goal is not to replace the Bayesian interpretation of uncertainties, but to provide a substantially more robust optimizer that:
+\begin{enumerate}
+    \item[(i)] converges reliably for nonlinear URR observables and
+    \item[(ii)] remains agnostic to the specific parameterization used by the underlying model.
+\end{enumerate}
+
+
+\subsubsection{Gradient Descent Implementation}
+The goal of the fit is to determine a parameter vector $\mathbf{p}=(p_1,\dots,p_n)$ such that the model predictions $\mathbf{t}(\mathbf{p})$ best reproduce the measured data $\mathbf{d}=(d_1,\dots,d_m)$. With independent experimental uncertainties $\sigma_j$, this is posed as minimizing the chi-squared objective
+\begin{equation}
+\chi^2(\mathbf{p}) \;=\; \sum_{j=1}^{m}
+\left(\frac{d_j - t_j(\mathbf{p})}{\sigma_j}\right)^2.
+\label{eq:chi2_scalar}
+\end{equation}
+To determine how parameters should be adjusted, the fitter requires the gradient of $\chi^2$ with respect to each parameter, $g_i \equiv \partial \chi^2/\partial p_i$.
+
+First compute the derivative of $\chi^2$ with respect to the theoretical values $\mathbf{t}$, holding $\mathbf{p}$ fixed. Differentiating \autoref{eq:chi2_scalar} with respect to a particular theory component $t_j$ gives
+\begin{equation}
+\frac{\partial \chi^2}{\partial t_j}
+\;=\;
+-2\,\frac{d_j - t_j(\mathbf{p})}{\sigma_j^2}
+\;=\;
+2\,\frac{t_j(\mathbf{p})-d_j}{\sigma_j^2}.
+\label{eq:dchi2_dt}
+\end{equation}
+Next, apply the chain rule to propagate this sensitivity through the model dependence $t_j(\mathbf{p})$:
+\begin{equation}
+g_i \;\equiv\; \frac{\partial \chi^2}{\partial p_i}
+\;=\;
+\sum_{j=1}^{m}
+\frac{\partial \chi^2}{\partial t_j}\,
+\frac{\partial t_j}{\partial p_i}.
+\label{eq:chainrule_J}
+\end{equation}
+Substituting \autoref{eq:dchi2_dt} into \autoref{eq:chainrule_J} yields
+\begin{equation}
+g_i
+=
+2\sum_{j=1}^{m}
+\frac{t_j(\mathbf{p})-d_j}{\sigma_j^2}\,
+\frac{\partial t_j(\mathbf{p})}{\partial p_i}.
+\label{eq:chi2_grad_from_J}
+\end{equation}
+
+In matrix form, the Jacobian is defined as
+$J_{ji} \equiv \partial t_j/\partial p_i$,
+the diagonal weight matrix $W$ with $W_{jj}=1/\sigma_j^2$,
+and the residual vector $\mathbf{t}(\mathbf{p})-\mathbf{d}$.
+Then \autoref{eq:chi2_grad_from_J} can be written compactly as
+\begin{equation}
+\mathbf{g} \;=\; 2\,J^T\,W\,\left(\mathbf{t}(\mathbf{p})-\mathbf{d}\right).
+\label{eq:g_compact}
+\end{equation}
+Thus, once the model provides $J=\partial \mathbf{t}/\partial \mathbf{p}$, the fitter directly constructs the $\chi^2$ gradient $\mathbf{g}$ using the experimental weights and the current theory--data mismatch.
+
+Parameters are updated iteratively using a variance-normalized gradient step:
+\begin{equation}
+p_i^{(k+1)} \;=\; p_i^{(k)} \;-\; \eta\,\tilde{g}_i^{(k)},
+\label{eq:gd_update_compact}
+\end{equation}
+where $\eta$ is the learning rate and $\tilde{\mathbf{g}}$ is a variance-normalized version of $\mathbf{g}$.
+
+Let $\sigma_{p_i}$ denote the prior (initial) $1\sigma$ uncertainty assigned to parameter $p_i$ (with independent priors). The variance-normalized gradient is defined as
+\begin{equation}
+\tilde{g}_i \;\equiv\;
+\frac{\sigma_{p_i}^2\, g_i}{\left\|\tilde{\mathbf{g}}\right\|},
+%{\sqrt{\sum_{\ell=1}^{n}\left(\sigma_{p_\ell}\,g_\ell\right)^2}},
+\label{eq:variance_normalized_grad}
+\end{equation}
+where the denominator is the (prior-scaled) gradient norm,
+\begin{equation}
+\left\|\tilde{\mathbf{g}}\right\|
+\;\equiv\;
+\sqrt{\sum_{\ell=1}^{n}\left(\sigma_{p_\ell}\,g_\ell\right)^2 }.
+\label{eq:whitened_norm_simple}
+\end{equation}
+
+This scaling has two effects. First, multiplying by $\sigma_{p_i}^2$ weights updates toward parameters that are less certain \emph{a priori}, and suppresses movement in parameters with tight priors. Second, normalizing by the variance-adjusted norm makes the overall step length largely independent of the raw gradient magnitude and measures the step size in units set by the prior parameter scales. This is particularly helpful when fitted parameters span many orders of magnitude and when the objective function is strongly nonlinear in subsets of parameters.
+
+After the best-fit parameters $\mathbf{p}^\star$ are obtained, parameter uncertainties are estimated from the local curvature of $\chi^2$ at the optimum. Under the standard linearized approximation,
+\begin{equation}
+C_{\mathbf{p}}
+\;\approx\;
+\left(J^{T} W J\right)^{-1}\Bigg|_{\mathbf{p}^\star},
+\label{eq:param_cov_simple}
+\end{equation}
+and the reported $1\sigma$ uncertainty on parameter $p_i$ is
+$\sigma_{p_i}^{(\text{post})} = \sqrt{(C_{\mathbf{p}})_{ii}}$.
+
+
+
 %    \item Fitting
 %    \begin{enumerate}
 %        \item Fitting procedure with direct intermediate structure parameterization
