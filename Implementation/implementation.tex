@@ -34,7 +34,7 @@ The following sections will discuss software refactoring (bug fixes, improved ph
 \section{URR Representation in SAMMY}
 \label{sec:urr-in-sammy}
 
-The average cross section in the URR is typically defined according to Hauser-Feshbach theory, which provides a framework for describing nuclear reactions proceeding through a compound nucleus when many channels are open and individual resonance effects are smeared out. The energy-averaged total cross section for an incoming channel $c$ can be expressed as:
+The average cross section in the URR is typically defined according to Hauser-Feshbach theory\cite{Hauser1952}, which provides a framework for describing nuclear reactions proceeding through a compound nucleus when many channels are open and individual resonance effects are smeared out. The energy-averaged total cross section for an incoming channel $c$ can be expressed as:
 
 \begin{equation}
     \label{eq:hauser-feshbach-cross-section}
@@ -113,7 +113,7 @@ The parameters of significance to transmission self-shielding in the URR, which 
         \end{equation}
         and where $D_0$ is the user-input S-wave level spacing. The primary motivation for this change was to eliminate previous approximations which SESH utilized for this formula to enable a more physically realistic model that accounts for energy dependency of level spacings across different $J$ values.
         
-        The updated methodology uses the same input S-wave level spacing, but instead uses Bethe formula to describe the conversion from $D_0$ to $D_J$
+        The updated methodology uses the same input S-wave level spacing, but instead uses Bethe formula\cite{Bethe1936} to describe the conversion from $D_0$ to $D_J$
         \begin{equation}
             \label{eq:bethe-formula}
             \frac{1}{D_J} = \frac{1}{D_0}
@@ -149,7 +149,7 @@ The parameters of significance to transmission self-shielding in the URR, which 
             \label{eq:avg-neut-width}
             \langle \Gamma_{n,J}^{\ell} \rangle = \mu_{\ell,J} D_J S_\ell \nu_{\ell}(E) \sqrt{E}
         \end{equation}
-        in which $S_ell$ is the strength function (a parameter that is either input or fit to experimental data), and $\nu_{\ell}$ is the penetrability, which has an $\ell$ and $\rho$ dependent form given in \autoref{eq:penetration-factor}.
+        in which $S_ell$ is the strength function (a parameter that is either input or fit to experimental data), and $\nu_{\ell}$ is the penetrability\cite{Blatt1952}, which has an $\ell$ and $\rho$ dependent form given in \autoref{eq:penetration-factor}.
         \begin{equation}
         \label{eq:penetration-factor}
             \nu_\ell = \begin{cases}
@@ -183,7 +183,7 @@ The parameters of significance to transmission self-shielding in the URR, which 
     \subsection{Calculating Potential Scattering}
         \label{ssec:pot-scat}
 
-        The final component required for the cross-section simulation is the potential scattering. As shown in \autoref{eq:slbw}, the first part of that equation exists outside the resonance sum. This is the potential scattering term\cite{t2}, and can be written as
+        The final component required for the cross-section simulation is the potential scattering\cite{Teichmann1952}. As shown in \autoref{eq:slbw}, the first part of that equation exists outside the resonance sum. This is the potential scattering term\cite{t2}, and can be written as
         \begin{equation}
             \label{eq:potential-scattering}
             \sigma_p = \frac{ 4 \pi}{k^2} \sum_\ell (2\ell +1) \sin^2{\phi_\ell}
@@ -211,7 +211,7 @@ The parameters of significance to transmission self-shielding in the URR, which 
         \begin{equation}
             R' = a_c (1 - R_0^\infty) \label{eq:1}
         \end{equation}
-        However, for analyses that extend to higher energies or include higher orbital momenta $(\ell > 0)$, this s-wave approximation is considered inadequate\cite{jeff18}. A more sophisticated model is required to accurately replicate the underlying cross-section behavior and its associated resonance structure.
+        However, for analyses that extend to higher energies or include higher orbital momenta $(\ell > 0)$, this s-wave approximation is considered inadequate\cite{jeff18}\cite{Lynn1968}. A more sophisticated model is required to accurately replicate the underlying cross-section behavior and its associated resonance structure.
         
         The generalized SPRT method\cite{sprt} provides an improved model that addresses the s-wave low-energy approximation. It offers an approximate relationship for the effective radius, $R_l'$, which accounts for the variation with higher-order partial waves:
         \begin{equation}

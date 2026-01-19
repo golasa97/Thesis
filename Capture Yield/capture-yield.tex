@@ -321,46 +321,46 @@ in which
 
 With the theoretical framework for the multiple scattering correction established, it is essential to verify that the physics implemented in the SESH code is accurate. The primary objective of this section is to validate the core physics of the multiple scattering and capture yield algorithm. This is achieved by comparing the results from SESH against a high-fidelity benchmark, ensuring that the model can be trusted before it is integrated into the full fitting procedure. To avoid confounding issues discovered in previous chapters, a clean, single-isotope benchmark case is used.
 
+
 \subsection{Validation Strategy}
 \label{ssec:capture-yield-validation-strategy}
 
-A direct verification of the capture yield correction for a multi-isotope sample (such as natural Zirconium) against a code like MCNP presents a significant challenge. As discovered during the multi-isotope transmission validation (\autoref{chap:multiiso-transmission-correction}), a variance-conservation issue exists in the probability table (P-Table) method used by MCNP and NJOY for multi-isotope systems. This discrepancy, which causes MCNP to under-predict self-shielding effects, would make it impossible to distinguish between a true error in the SESH capture model and a known issue in the MCNP benchmark itself.
+Validating the capture yield correction requires a benchmark that isolates the effects of multiple scattering without introducing additional sources of systematic error. As demonstrated in the multi-isotope transmission validation (\autoref{chap:multiiso-transmission-correction}), the probability table (P-Table) method used by MCNP and NJOY exhibits a variance-conservation issue in multi-isotope systems, leading to an underprediction of self-shielding effects. This limitation makes multi-isotope comparisons unsuitable for direct validation of the capture yield correction.
 
-Therefore, the validation strategy is to isolate and verify the new physics kernel—the multiple scattering algorithm—using a well-behaved, single-isotope case where the P-Table issue is not present. For this purpose, \textsuperscript{181}Ta is chosen as the benchmark nuclide. This choice is justified for several reasons:
-\begin{itemize}
-    \item It is a single, stable isotope, which eliminates the multi-isotope variance problem.
-    \item It has a well-behaved and well-understood resonance structure in the URR, making it an ideal statistical case.
-    \item It was used extensively for the transmission correction validation in \autoref{chap:transmission-correction}, providing a consistent basis for comparison.
-\end{itemize}
+To avoid this ambiguity, validation is performed using a single-isotope benchmark. The isotope \textsuperscript{181}Ta is selected because it eliminates multi-isotope variance effects, possesses a well-characterized resonance structure in the unresolved resonance region (URR), and was previously used for transmission correction validation (\autoref{chap:transmission-correction}), providing a consistent reference point.
 
-    In addition to the parameters of sample thickness and temperature, which were central to the transmission validation, the capture yield calculation introduces further geometric dependencies. Specifically, the correction is sensitive to the sample radius and the radius of the incident neutron beam. A comprehensive validation must therefore investigate the model's performance across three key physical parameters:
-\begin{itemize}
-    \item \textbf{Sample Thickness ($n$):} Varied to assess the model's handling of increased multiple scattering probability.
-    \item \textbf{Sample Radius ($R_{sample}$):} Varied to test the geometric accuracy of the particle transport simulation.
-    \item \textbf{Beam Radius ($R_{beam}$):} Varied from zero up to the sample radius to verify the model's response to different experimental source configurations.
-\end{itemize}
+Unlike transmission corrections, capture yield corrections are sensitive not only to sample thickness and temperature, but also to geometric effects arising from neutron transport within the sample. In particular, the correction depends on both the sample radius, which governs lateral neutron leakage, and the radius of the incident neutron beam, which influences the average neutron path length prior to escape. The expected physical behavior is that the capture yield correction increases as the beam radius decreases, since neutrons traverse longer paths within the sample, and decreases as the sample radius decreases, due to enhanced radial leakage. These trends provide clear, physically motivated expectations against which the model can be evaluated.
 
-    The expected physical behavior is that the capture yield correction will increase as the beam radius decreases (due to neutrons having a longer average path length within the sample before escape) and decrease as the sample radius decreases (as neutrons are more likely to escape from the sides). By benchmarking the SESH capture yield calculation for \textsuperscript{181}Ta against a carefully constructed MCNP model across these parameters, the core multiple scattering and particle transport physics can be validated with confidence.
+Validation is carried out by comparing capture yield corrections calculated by SESH against results from a high-fidelity MCNP6 benchmark \cite{mcnp}. The MCNP geometry follows the configuration described in \autoref{ssec:mcnp-benchmark-model}, consisting of a mono-directional neutron beam incident on a cylindrical \textsuperscript{181}Ta sample. Capture tallies are used to compute the history-averaged capture probability as a function of energy, from which the benchmark correction factor $C_C$ is obtained.
 
-\subsection{MCNP Benchmark for Ta-181}
-\label{ssec:mcnp-benchmark-ta181}
+The benchmark spans a broad range of experimentally relevant configurations, as well as thicker stress-test cases that probe regimes with stronger attenuation and multiple scattering. The full set of parameters considered in the validation study is summarized in \autoref{tab:capture-validation-params}.
 
-To create a "ground truth" for the capture yield correction, a high-fidelity MCNP6 \cite{mcnp} benchmark was established. The model setup was essentially identical to the one used for the transmission validation described in \autoref{ssec:mcnp-benchmark-model}, simulating a mono-directional neutron beam on a cylindrical \textsuperscript{181}Ta sample. The key difference was the use of tallies to determine the total capture probability $\langle p \rangle$, allowing for a direct calculation of the benchmark $C_C$ value. The simulation was performed across a matrix of physical parameters to fully test the model:
-\begin{itemize}
-    \item \textbf{Sample Thicknesses:} 2mm, 4mm, 8mm, and 12mm.
-    \item \textbf{Sample Radii:} Varied to match typical experimental setups.
-    \item \textbf{Beam Radii:} Varied from a pencil beam ($R_{beam} \approx 0$) up to the full sample radius ($R_{beam} = R_{sample}$).
-\end{itemize}
-This comprehensive set of benchmark cases allows for a thorough validation of the SESH model's response to changes in sample geometry and beam configuration.
+\begin{table}[h!]
+\centering
+\caption{Benchmark parameter ranges used for validation of the capture yield correction model.}
+\label{tab:capture-validation-params}
+\begin{tabular}{l l}
+\hline
+\textbf{Parameter} & \textbf{Values Considered} \\
+\hline
+Sample thickness ($n$) & 2\,mm, 4\,mm, 8\,mm, 12\,mm \\
+Sample radius ($R_{\text{sample}}$) & 20\,mm, 40\,mm, 60\,mm, 80\,mm \\
+Beam radius ($R_{\text{beam}}$) & 0.0, 0.25, 0.5, 0.75, 1.0 $\times R_{\text{sample}}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+This parameter space is sufficient to verify the capture yield correction under conditions relevant to experiment, while also identifying regimes where discrepancies may emerge as multiple scattering and geometric effects become increasingly important.
 
 \subsection{Comparison and Results}
 \label{ssec:comparison-and-results}
 
-The capture correction factor, $C_C$, calculated by the modernized SESH code was compared directly against the MCNP benchmark results for \textsuperscript{181}Ta. The comparison was performed across the full matrix of sample thicknesses, sample radii, and beam radii previously described, as well as at various temperatures.
+The capture correction factor, $C_C$, calculated by the modernized SESH code was compared directly against the MCNP benchmark results for \textsuperscript{181}Ta. The comparison was performed across the full matrix of sample thicknesses, sample radii, and beam radii previously described.
 
-The results for varying sample thickness, shown in \autoref{fig:cy-verification-ta181} and \autoref{fig:cy-verification-err-ta181}, demonstrate excellent agreement between SESH and MCNP for the thinner samples. As sample thickness increases, SESH begins to show a small, systematic under-prediction of the correction factor, particularly at lower energies where self-shielding is strongest. However, even for the thickest (12mm) sample, the relative error generally remains below 2\%. The strong agreement across different temperatures also indicates that Doppler broadening is handled correctly within the multiple scattering simulation.
+The results for varying sample thickness, shown in \autoref{fig:cy-verification-ta181} and \autoref{fig:cy-verification-err-ta181}, demonstrate excellent agreement between SESH and MCNP for the thinner samples. As sample thickness increases, SESH begins to show a small, systematic under-prediction of the correction factor, particularly at lower energies where self-shielding is strongest. However, even for the thickest (12mm) sample, the relative error generally remains below 2\%.
 
-The validation study also confirmed the expected physical trends with respect to sample and beam geometry, as shown in \autoref{fig:cy-verification-sample-radius}, \autoref{fig:cy-verification-err-sample-radius}, \autoref{fig:cy-verification-beam-radius}, and \autoref{fig:cy-verification-err-beam-radius}. The capture yield correction was observed to increase as the beam radius decreases and to decrease as the sample radius decreases. Agreement between SESH and MCNP was very strong in cases where the beam radius was equal to the sample radius. As the beam radius approached zero (a pencil beam), a small but observable discrepancy emerged, though it was not considered problematic for practical applications. This is a favorable result, as the experimental data used in this work were taken with a beam that covers the entire sample face ($R_{beam} = R_{sample}$). 
+The validation study also confirmed the expected physical trends with respect to sample and beam geometry, as shown in \autoref{fig:cy-verification-sample-radius}, \autoref{fig:cy-verification-err-sample-radius}, \autoref{fig:cy-verification-beam-radius}, and \autoref{fig:cy-verification-err-beam-radius}. The capture yield correction was observed to increase as the beam radius decreases and to decrease as the sample radius decreases. 
+
 
 \begin{figure}[h!]
     \centering
