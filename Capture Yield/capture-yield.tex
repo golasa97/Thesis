@@ -315,11 +315,37 @@ in which
         \label{fig:sampling-1d-comparison}
     \end{figure}
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Capture Yield/Figures/cc_improvements.png}
+    \caption{Improvements to the capture correction factor calculation in SESH compared to MCNP.}
+        \label{fig:capture-improvements}
+\end{figure}
 
-\section{Verification of the Capture Yield Physics Model}
+
+
+\section{Validation and Characterization of Multiple Scattering and Capture Yield}
 \label{sec:capture-yield-verification}
 
 With the theoretical framework for the multiple scattering correction established, it is essential to verify that the physics implemented in the SESH code is accurate. The primary objective of this section is to validate the core physics of the multiple scattering and capture yield algorithm. This is achieved by comparing the results from SESH against a high-fidelity benchmark, ensuring that the model can be trusted before it is integrated into the full fitting procedure. To avoid confounding issues discovered in previous chapters, a clean, single-isotope benchmark case is used.
+
+\subsection{Experimental Validation}
+\label{ssec:experimental-validation}
+
+To provide an initial validation of the capture-yield correction implementation, results are compared against the filtered-beam capture-yield measurements of McDermott \cite{McDermott2017Ta181}. That experiment used two \textsuperscript{181}Ta samples (99.95\% pure elemental tantalum) in the form of rectangular plates with lateral dimensions of approximately $10\ \mathrm{cm}\times 10\ \mathrm{cm}$ and thicknesses of $\sim 2$~mm and $\sim 6$~mm, enabling capture-yield measurements at discrete quasi-monoenergetic energies. \cite{McDermott2017Ta181}
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Capture Yield/Figures/mcdermott_yield_comparison.png}
+    \caption{Comparison of simulated \textsuperscript{181}Ta capture yield to the filtered-beam measurements of McDermott \cite{McDermott2017Ta181}. Results are shown for the two plate thicknesses reported in the experiment (2~mm and 6~mm) at energies within the ENDF-8.1 \textsuperscript{181}Ta unresolved resonance region.}
+    \label{fig:mcdermott-yield-compare}
+\end{figure}
+
+The resultant simulated values are in strong agreement with the measurement, and nearly identical values to MCNP. This is an unsurprising result, since this measurement was used in the ENDF-8.1 \textsuperscript{181}Ta evaluation\cite{Brown2024}. The $6$~mm case shows that both MCNP and SAMMY slightly underpredict the measured yield; this is consistent with the Doppler-broadening defect previously identified in the SESH implementation (and corrected in the present work). The same issue also affects the $2$~mm case, but the impact is not visually resolvable at that thickness within the experimental uncertainties.
+
+
+The comparison in \autoref{fig:mcdermott-yield-compare} is therefore expected to be highly favorable. In the recent ENDF/B-VIII.1 evaluation, the McDermott \emph{et al.} dataset was used (in part) to constrain and fit the URR parameters for \textsuperscript{181}Ta. Two immediate consequences follow. First, when SAMMY is supplied the evaluated URR parameters, it should reproduce the measured capture yield closely, since the measurements helped inform the parameters themselves. Second, because MCNP and SAMMY are both drawing from the same evaluated physics input, their predicted yields should be nearly identical, with only small residual differences arising from numerical and algorithmic implementation details rather than underlying nuclear data.
 
 
 \subsection{Validation Strategy}
@@ -357,52 +383,108 @@ This parameter space is sufficient to verify the capture yield correction under 
 
 The capture correction factor, $C_C$, calculated by the modernized SESH code was compared directly against the MCNP benchmark results for \textsuperscript{181}Ta. The comparison was performed across the full matrix of sample thicknesses, sample radii, and beam radii previously described.
 
-The results for varying sample thickness, shown in \autoref{fig:cy-verification-ta181} and \autoref{fig:cy-verification-err-ta181}, demonstrate excellent agreement between SESH and MCNP for the thinner samples. As sample thickness increases, SESH begins to show a small, systematic under-prediction of the correction factor, particularly at lower energies where self-shielding is strongest. However, even for the thickest (12mm) sample, the relative error generally remains below 2\%.
+\begin{figure}[h!]
+    \centering
 
-The validation study also confirmed the expected physical trends with respect to sample and beam geometry, as shown in \autoref{fig:cy-verification-sample-radius}, \autoref{fig:cy-verification-err-sample-radius}, \autoref{fig:cy-verification-beam-radius}, and \autoref{fig:cy-verification-err-beam-radius}. The capture yield correction was observed to increase as the beam radius decreases and to decrease as the sample radius decreases. 
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/cc_1x2_t1_r80.png}
+        \caption{
+        Thin, wide sample: $t=1~\mathrm{mm}$, $R=80~\mathrm{mm}$.
+        }
+        \label{fig:cc_best_case}
+    \end{subfigure}
+
+    \vspace{1em}
+
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/cc_1x2_t8_r20.png}
+        \caption{
+        Thick, narrow sample: $t=8~\mathrm{mm}$, $R=20~\mathrm{mm}$.
+        }
+        \label{fig:cc_worst_case}
+    \end{subfigure}
+
+    \caption{
+    Validation of the capture correction factor $C_C(E)$ under representative geometric extremes.
+    In each subfigure, the left panel compares MCNP-derived correction factors (markers) with the SAMMY/SESH implementation (solid lines) for multiple beam-to-sample radius ratios $r_b/R$, while the right panel shows the corresponding relative deviation $(C_S-C_M)/C_M$.}
+    \label{fig:cc-extreme-cases}
+\end{figure}
+
+
+\autoref{fig:cc-extreme-cases} presents two representative limits drawn from the full set of simulated geometries. The upper panel corresponds to the most favorable configuration tested, consisting of a thin sample with a large radius, while the lower panel represents a deliberately pessimistic case with large thickness and small radius. All other simulated geometries fall between these two limits in both magnitude and structure of the correction factor and relative error.
+
+It should be stated that the most favorable case, in which the error does not exceed 0.5\%, is the most representative of typical capture yield experiments.
+
+A consistent feature visible in the relative error panels of \autoref{fig:cc-extreme-cases} is a localized deviation near incident neutron energies of approximately $6$--$10~\mathrm{keV}$. This structure coincides with the onset of the first inelastic scattering channel in \textsuperscript{181}Ta and is observed systematically across all tested geometries.
 
 
 \begin{figure}[h!]
     \centering
-    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_ta181.png}
-    \caption{Comparison of the capture correction factor ($C_C$) for \textsuperscript{181}Ta calculated by SESH and MCNP for various sample thicknesses.}
-    \label{fig:cy-verification-ta181}
+    \includegraphics[width=0.95\textwidth]{Capture Yield/Figures/rms_vs_radius_eta0.png}
+    \caption{RMS relative error between SAMMY/SESH and MCNP for the capture correction factor, aggregated over incident energy and shown as a function of sample radius $R$ for several sample thicknesses $t$. Results correspond to the pencil-beam limit ($r_b/R=0$).}
+    \label{fig:rms-vs-radius}
 \end{figure}
 
 \begin{figure}[h!]
     \centering
-    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_err_ta181.png}
-    \caption{Relative error between the SESH and MCNP calculation of $C_C$ for \textsuperscript{181}Ta for various sample thicknesses.}
-    \label{fig:cy-verification-err-ta181}
+    \includegraphics[width=0.95\textwidth]{Capture Yield/Figures/rms_vs_thickness_eta0.png}
+    \caption{RMS relative error between SAMMY/SESH and MCNP for the capture correction factor, aggregated over incident energy and shown as a function of sample thickness $t$ for several sample radii $R$. Results correspond to the pencil-beam limit ($r_b/R=0$).}
+    \label{fig:rms-vs-thickness}
 \end{figure}
+
+
+\autoref{fig:rms-vs-radius} and \autoref{fig:rms-vs-thickness} help clarify which physical effects dominate the residual disagreement between SAMMY/SESH and MCNP. If the mismatch were primarily driven by multiple scattering within the sample volume, one would expect a strong dependence on sample radius, since increasing $R$ increases both the path length available for secondary interactions and the probability that scattered neutrons remain within the sample. Instead, the RMS error remains comparatively flat with respect to $R$ over the range tested (\autoref{fig:rms-vs-radius}), while showing a clearer increase with sample thickness (\autoref{fig:rms-vs-thickness}). This trend is more consistent with an error mechanism tied to boundary treatments rather than multiple-scattering. Increasing thickness increases the extent of the cylindrical sidewall, and the consequence of this is that any systematic differences in how the two codes treat the cylinder boundary are amplified. Consequently, the remaining discrepancies are attributed primarily to geometric edge handling at the cylinder wall, rather than deficiencies in the underlying multiple-scattering physics model as-implemented.
+
 
 \begin{figure}[h!]
     \centering
-    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_sample_radius.png}
-    \caption{Comparison of the capture correction factor ($C_C$) for \textsuperscript{181}Ta calculated by SESH and MCNP for various sample radii.}
-    \label{fig:cy-verification-sample-radius}
+
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/rms_vs_eta_t2_r80.png}
+        \caption{$t=2~\mathrm{mm}$, $R=80~\mathrm{mm}$}
+        \label{fig:rms_eta_t2_r80}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/rms_vs_eta_t6_r80.png}
+        \caption{$t=6~\mathrm{mm}$, $R=80~\mathrm{mm}$}
+        \label{fig:rms_eta_t6_r80}
+    \end{subfigure}
+
+    \vspace{0.8em}
+
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/rms_vs_eta_t8_r80.png}
+        \caption{$t=8~\mathrm{mm}$, $R=80~\mathrm{mm}$}
+        \label{fig:rms_eta_t8_r80}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/rms_vs_eta_t8_r20.png}
+        \caption{$t=8~\mathrm{mm}$, $R=20~\mathrm{mm}$}
+        \label{fig:rms_eta_t8_r20}
+    \end{subfigure}
+
+    \caption{
+    RMS relative change in the SAMMY capture correction factor as a function of beam-to-sample radius ratio $r_b/R$ for representative sample geometries.
+    All results are shown relative to the pencil-beam limit ($r_b/R=0$).
+    }
+    \label{fig:rms-vs-eta}
 \end{figure}
 
-\begin{figure}[h!]
-    \centering
-    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_err_sample_radius.png}
-    \caption{Relative error between the SESH and MCNP calculation of $C_C$ for \textsuperscript{181}Ta for various sample radii.}
-    \label{fig:cy-verification-err-sample-radius}
-\end{figure}
 
-\begin{figure}[h!]
-    \centering
-    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_beam_radius.png}
-    \caption{Comparison of the capture correction factor ($C_C$) for \textsuperscript{181}Ta calculated by SESH and MCNP for various beam radii.}
-    \label{fig:cy-verification-beam-radius}
-\end{figure}
+\autoref{fig:rms-vs-eta} summarizes the sensitivity of the capture correction factor to the beam-to-sample radius ratio across representative sample geometries. For samples with sufficiently large radius, the RMS change in $C_C$ remains small and relatively flat over a wide range of $r_b/R$. This behavior is consistent across thin and moderately thick samples, supporting the conclusion that edge effects are weak when the cylindrical sidewall represents a small fraction of the total interaction surface.
 
-\begin{figure}[h!]
-    \centering
-    %\includegraphics[width=\linewidth]{Capture Yield/Figures/cy_verification_err_beam_radius.png}
-    \caption{Relative error between the SESH and MCNP calculation of $C_C$ for \textsuperscript{181}Ta for various beam radii.}
-    \label{fig:cy-verification-err-beam-radius}
-\end{figure}
+In contrast, the small-radius, thick-sample configuration shown in the lower-right panel exhibits a rapid growth in RMS deviation as $r_b/R$ approaches 1. This geometry is deliberately pathological. the combination of large thickness and small radius maximizes the relative contribution of the cylindrical sidewall, amplifying any algorithmic differences in how SAMMY/SESH and MCNP treat boundary crossings and near-surface transport. The emergence of large deviations only in this limit demonstrates that the underlying correction model remains robust for experimentally relevant sample dimensions, and that failure occurs only when edge-dominated geometries are pushed well beyond typical capture measurement conditions.
+
+
+
 
 \subsection{Conclusion on Physics Model Validity}
 \label{ssec:conclusion-physics-model}
