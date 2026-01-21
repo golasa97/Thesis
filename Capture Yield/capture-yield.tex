@@ -342,20 +342,12 @@ To provide an initial validation of the capture-yield correction implementation,
     \label{fig:mcdermott-yield-compare}
 \end{figure}
 
-The resultant simulated values are in strong agreement with the measurement, and nearly identical values to MCNP. This is an unsurprising result, since this measurement was used in the ENDF-8.1 \textsuperscript{181}Ta evaluation\cite{Brown2024}. The $6$~mm case shows that both MCNP and SAMMY slightly underpredict the measured yield; this is consistent with the Doppler-broadening defect previously identified in the SESH implementation (and corrected in the present work). The same issue also affects the $2$~mm case, but the impact is not visually resolvable at that thickness within the experimental uncertainties.
+The resultant simulated values are in strong agreement with the measurement, and nearly identical values to MCNP. This is an unsurprising result, since this measurement was used in the ENDF-8.1 \textsuperscript{181}Ta evaluation\cite{Brown2024}. The $6$~mm case shows that both MCNP and SAMMY slightly underpredict the measured yield. A slight disagreement is acceptable, since this was one of several experiments used in the evaluation\cite{Brown2019}, so a marginal disagreement is acceptable. The critical comparison is between the MCNP and SAMMY, for which SAMMY agrees very strongly.
 
-
-The comparison in \autoref{fig:mcdermott-yield-compare} is therefore expected to be highly favorable. In the recent ENDF/B-VIII.1 evaluation, the McDermott \emph{et al.} dataset was used (in part) to constrain and fit the URR parameters for \textsuperscript{181}Ta. Two immediate consequences follow. First, when SAMMY is supplied the evaluated URR parameters, it should reproduce the measured capture yield closely, since the measurements helped inform the parameters themselves. Second, because MCNP and SAMMY are both drawing from the same evaluated physics input, their predicted yields should be nearly identical, with only small residual differences arising from numerical and algorithmic implementation details rather than underlying nuclear data.
-
+While the McDermott data provide a useful validation, it does not by itself isolate the performance of the multiple-scattering correction. The measurement is taken at a small number of discrete energies and in a fixed experimental geometry, so good agreement can occur even if compensating effects are present in the model. In particular, the experiment does not systematically vary the geometric drivers of the correction (beam size, sample radius, and thickness), which are exactly the quantities that control neutron path length and leakage. For that reason, a dedicated computational benchmark is used to characterize the correction factor across a controlled range of geometries and to identify where the SESH implementation begins to deviate.
 
 \subsection{Validation Strategy}
 \label{ssec:capture-yield-validation-strategy}
-
-Validating the capture yield correction requires a benchmark that isolates the effects of multiple scattering without introducing additional sources of systematic error. As demonstrated in the multi-isotope transmission validation (\autoref{chap:multiiso-transmission-correction}), the probability table (P-Table) method used by MCNP and NJOY exhibits a variance-conservation issue in multi-isotope systems, leading to an underprediction of self-shielding effects. This limitation makes multi-isotope comparisons unsuitable for direct validation of the capture yield correction.
-
-To avoid this ambiguity, validation is performed using a single-isotope benchmark. The isotope \textsuperscript{181}Ta is selected because it eliminates multi-isotope variance effects, possesses a well-characterized resonance structure in the unresolved resonance region (URR), and was previously used for transmission correction validation (\autoref{chap:transmission-correction}), providing a consistent reference point.
-
-Unlike transmission corrections, capture yield corrections are sensitive not only to sample thickness and temperature, but also to geometric effects arising from neutron transport within the sample. In particular, the correction depends on both the sample radius, which governs lateral neutron leakage, and the radius of the incident neutron beam, which influences the average neutron path length prior to escape. The expected physical behavior is that the capture yield correction increases as the beam radius decreases, since neutrons traverse longer paths within the sample, and decreases as the sample radius decreases, due to enhanced radial leakage. These trends provide clear, physically motivated expectations against which the model can be evaluated.
 
 Validation is carried out by comparing capture yield corrections calculated by SESH against results from a high-fidelity MCNP6 benchmark \cite{mcnp}. The MCNP geometry follows the configuration described in \autoref{ssec:mcnp-benchmark-model}, consisting of a mono-directional neutron beam incident on a cylindrical \textsuperscript{181}Ta sample. Capture tallies are used to compute the history-averaged capture probability as a function of energy, from which the benchmark correction factor $C_C$ is obtained.
 
@@ -437,7 +429,6 @@ A consistent feature visible in the relative error panels of \autoref{fig:cc-ext
 
 \autoref{fig:rms-vs-radius} and \autoref{fig:rms-vs-thickness} help clarify which physical effects dominate the residual disagreement between SAMMY/SESH and MCNP. If the mismatch were primarily driven by multiple scattering within the sample volume, one would expect a strong dependence on sample radius, since increasing $R$ increases both the path length available for secondary interactions and the probability that scattered neutrons remain within the sample. Instead, the RMS error remains comparatively flat with respect to $R$ over the range tested (\autoref{fig:rms-vs-radius}), while showing a clearer increase with sample thickness (\autoref{fig:rms-vs-thickness}). This trend is more consistent with an error mechanism tied to boundary treatments rather than multiple-scattering. Increasing thickness increases the extent of the cylindrical sidewall, and the consequence of this is that any systematic differences in how the two codes treat the cylinder boundary are amplified. Consequently, the remaining discrepancies are attributed primarily to geometric edge handling at the cylinder wall, rather than deficiencies in the underlying multiple-scattering physics model as-implemented.
 
-
 \begin{figure}[h!]
     \centering
 
@@ -483,12 +474,121 @@ A consistent feature visible in the relative error panels of \autoref{fig:cc-ext
 
 In contrast, the small-radius, thick-sample configuration shown in the lower-right panel exhibits a rapid growth in RMS deviation as $r_b/R$ approaches 1. This geometry is deliberately pathological. the combination of large thickness and small radius maximizes the relative contribution of the cylindrical sidewall, amplifying any algorithmic differences in how SAMMY/SESH and MCNP treat boundary crossings and near-surface transport. The emergence of large deviations only in this limit demonstrates that the underlying correction model remains robust for experimentally relevant sample dimensions, and that failure occurs only when edge-dominated geometries are pushed well beyond typical capture measurement conditions.
 
-
-
-
 \subsection{Conclusion on Physics Model Validity}
 \label{ssec:conclusion-physics-model}
 
 The strong agreement between the SESH calculations and the MCNP benchmark for the \textsuperscript{181}Ta case validates the core physics of the multiple scattering and capture yield algorithm. The observed small discrepancies for very thick samples are consistent with trends seen in the transmission validation (\autoref{chap:transmission-correction}) and define the practical limits of the model's applicability. This successful verification provides the necessary confidence to proceed with integrating this capability into the full SAMMY fitting workflow.
 
+\section{Integration with the Parameter Fitting Workflow}
+\label{sec:capture-yield-fitting-workflow}
 
+The end goal of implementing the capture yield correction is to enable direct fitting of capture-yield measurements with the correction applied dynamically during the SAMMY optimization. In this workflow, the corrected theoretical yield becomes a function of the fitted resonance parameters, and therefore its Jacobian must be well defined for use in the iterative update.
+
+For the thin-sample model corrected by multiple scattering,
+\begin{equation}
+    \label{eq:yield-model-corrected}
+    \left\langle Y \right\rangle (p) = n\,C_C(p)\,\left\langle \sigma_\gamma \right\rangle (p),
+\end{equation}
+where $p$ denotes a generic fitted parameter, and $n$ is the areal density (sample thickness) defined in \autoref{eq:correction-thin-sample-approximation}.
+
+\subsection{Derivative of the Corrected Yield Model}
+\label{ssec:capture-yield-yield-derivative}
+
+Applying the product rule to \autoref{eq:yield-model-corrected} gives
+\begin{equation}
+    \label{eq:yield-model-derivative-full}
+    \frac{\partial \left\langle Y \right\rangle}{\partial p}
+    =
+    n\left[
+        C_C(p)\,\frac{\partial \left\langle \sigma_\gamma \right\rangle}{\partial p}
+        +
+        \left\langle \sigma_\gamma \right\rangle(p)\,\frac{\partial C_C}{\partial p}
+    \right].
+\end{equation}
+
+The first term is the familiar SAMMY Jacobian contribution: $\partial\!\left\langle \sigma_\gamma \right\rangle/\partial p$ is computed analytically by the R-matrix model within SAMMY. The second term, $\partial C_C/\partial p$, is more challenging because $C_C$ is produced by a Monte Carlo transport calculation rather than a closed-form expression.
+
+In the transmission correction workflow (\autoref{chap:transmission-correction}), this same issue appears through the derivative $\partial C_T/\partial p$, and the impact of explicitly evaluating that derivative was found to be small for the tested cases (see the fitting comparison in \autoref{fig:fitting-comparison} and the associated error table \autoref{tab:fitting-error}). Motivated by that result, the capture yield fitting presented here adopts the analogous approximation
+\begin{equation}
+    \label{eq:cc-derivative-assumption}
+    \frac{\partial C_C}{\partial p} \approx 0,
+\end{equation}
+so that the corrected-yield derivative reduces to
+\begin{equation}
+    \label{eq:yield-model-derivative-approx}
+    \frac{\partial \left\langle Y \right\rangle}{\partial p}
+    \approx
+    n\,C_C\,\frac{\partial \left\langle \sigma_\gamma \right\rangle}{\partial p}.
+\end{equation}
+
+This approximation is equivalent to treating the capture correction as a slowly varying multiplicative factor during parameter updates, while still fully recomputing $C_C$ at each iteration using the current parameter values. The validity of this approximation is assessed by a dedicated fitting verification test in \autoref{ssec:capture-yield-fitting-validation}.
+
+During initial capture-yield fitting tests, the optimization failed to respond as expected when varying the average radiative width associated with higher-$\ell$ capture channels. This was traced to a legacy constraint in the original SAMMY URR implementation: although the input format permits $\ell$-dependent average radiative widths, only the lowest-$\ell$ value is consumed by the URR reader and it is reused when a higher-$\ell$ radiative width is required\cite{sammy}.
+
+In practice, this means that the effective model used in the URR fitting workflow enforces
+\begin{equation}
+    \label{eq:urr-gamma-width-coupling}
+    \left\langle \Gamma_\gamma \right\rangle_{\ell=0} \equiv \left\langle \Gamma_\gamma \right\rangle_{\ell=2},
+\end{equation}
+and similarly for other channels separated by $\Delta \ell = 2$.
+
+To ensure that the Jacobian is consistent with the implemented model, any update nominally applied to $\left\langle \Gamma_\gamma \right\rangle_{\ell=2}$ must be routed through the active parameter $\left\langle \Gamma_\gamma \right\rangle_{\ell=0}$. Equivalently, for $p = \left\langle \Gamma_\gamma \right\rangle_{\ell=2}$ the chain rule reduces to
+\begin{equation}
+    \label{eq:urr-gamma-width-chain-rule}
+    \frac{\partial \left\langle Y \right\rangle}{\partial p}
+    =
+    \frac{\partial \left\langle Y \right\rangle}{\partial \left\langle \Gamma_\gamma \right\rangle_{\ell=0}}
+    \frac{\partial \left\langle \Gamma_\gamma \right\rangle_{\ell=0}}{\partial \left\langle \Gamma_\gamma \right\rangle_{\ell=2}}
+    \approx
+    \frac{\partial \left\langle Y \right\rangle}{\partial \left\langle \Gamma_\gamma \right\rangle_{\ell=0}},
+\end{equation}
+since the coupling in \autoref{eq:urr-gamma-width-coupling} implies $\partial \langle \Gamma_\gamma \rangle_{\ell=0} / \partial \langle \Gamma_\gamma \rangle_{\ell=2} = 1$.
+
+
+This identification is widely treated as a valid practical constraint and is consistent with previous evaluations of average radiative widths\cite{CarlsonEscherHussein2014,atlas,Mughabghab2011,Brown2024}.
+
+The validity of this approximation is assessed by a dedicated fitting verification test in \autoref{ssec:capture-yield-fitting-validation}.
+
+
+\subsection{Verification of the Integrated Fitting Procedure}
+\label{ssec:capture-yield-fitting-validation}
+
+After verifying the standalone physics of the capture yield correction against MCNP in \autoref{sec:capture-yield-verification}, the final step is to verify that the correction can be integrated into the SAMMY fitting workflow without biasing the recovered parameters. The goal of this verification is not to reproduce an evaluated library, but to demonstrate that the combined SAMMY+SESH model can recover known parameters from controlled synthetic data.
+
+The verification test is structured analogously to the transmission-fitting verification in \autoref{chap:transmission-correction}: generate synthetic capture-yield data, choose an incorrect starting point, and then fit with the fully integrated self-shielded capture yield model.
+
+The benchmark comparisons in \autoref{sec:capture-yield-verification} identified several sensitivities in which the SAMMY capture-yield simulation diverged from the corresponding MCNP model. To avoid contaminating the fitting validation with these known modeling differences, the fitting study was restricted to conditions for which SAMMY and MCNP were already shown to be in close agreement: a pencil-beam geometry, incident energies below 6.1~keV (due to the inelastic state at 6.237~keV), and the largest sample radius considered (80~mm). While this avoids previously observed modeling discrepancies between SAMMY and MCNP, it also reduces the discernability between the two parameters.
+
+Two sample thicknesses (2~mm and 6~mm) are fitted simultaneously using a shared set of URR parameters. Only the average radiative widths are adjusted in this study. Neutron strength functions and distant-level parameters are held fixed because their implementations were validated previously.
+
+
+\begin{table}[H]
+    \centering
+    \caption{Validation of the capture-yield fitting workflow for $^{181}$Ta average radiative widths.}
+    \begin{tabular}{|c|ccc|}
+        \hline
+        Parameter & ENDF/B-VIII.1 & Prior (Adjusted) & Final Fit \\
+        \hline
+        $\langle \Gamma_\gamma \rangle_{\ell=0}$ (eV) & $6.1500\times10^{-2}\ \pm\ 2.5\times10^{-4}$ & $8.0000\times10^{-2}\ $ & $6.48\times10^{-2}$ \\
+        $\langle \Gamma_\gamma \rangle_{\ell=1}$ (eV) & $4.4300\times10^{-2}\ \pm\ 2.3\times10^{-4}$ & $6.0000\times10^{-2} $ & $4.40\times10^{-2}$ \\
+        $\langle \Gamma_\gamma \rangle_{\ell=2}$ (eV) & $6.1500\times10^{-2}\ \pm\ 2.5\times10^{-4}$ & \multicolumn{2}{c|}{\makebox[0pt][c]{(coupled to $\ell=0$)}} \\
+        \hline
+        $\chi^2$ & -- & $2.592\times10^{3}$ & $4.729$ \\
+        \hline
+    \end{tabular}
+    \label{tab:capture-yield-fitting-results}
+\end{table}
+
+The simultaneous fit successfully reduced the objective function from $\chi^2 = 2.592\times10^{3}$ to $\chi^2 = 4.729$, demonstrating that the capture-yield correction can be exercised within the SAMMY fitting loop under the restricted validation conditions.
+
+The fitted average radiative widths are close to the ENDF/B-VIII.1 values despite starting from deliberately perturbed inputs. In particular, the fitted $\langle \Gamma_\gamma \rangle_{\ell=1}$ moves from $6.00\times10^{-2}$ to $4.40\times10^{-2}$, which is very near the evaluated value of $4.43\times10^{-2}$. The fitted $\langle \Gamma_\gamma \rangle_{\ell=0}$ similarly shifts toward the evaluation, from $8.00\times10^{-2}$ to $6.48\times10^{-2}$, compared to the evaluated value of $6.15\times10^{-2}$. 
+
+The residual difference between the fitted and evaluated $\ell=0$ width is not unexpected in this validation, as previously mentioned due to the highly restricted fit regime. The fit was intentionally restricted to $E<6.1$~keV with a pencil beam and the largest sample radius in order to avoid known model discrepancies identified in the characterization. While this restriction isolates the fitting workflow from those model differences, it also limits the amount of information available to distinguish the effects of the $\ell=0$ and $\ell=1$ widths using capture-yield data alone. Within that limited domain, the fit results indicate that the workflow is functioning as intended and produces parameter values that are broadly consistent with the evaluation, even when started from significantly perturbed inputs.
+
+
+\subsection{Conclusion}
+\label{ssec:capture-yield-conclusion}
+
+This chapter presented a modernized capture-yield correction capability and validated it against both experiment and high-fidelity Monte Carlo. Comparisons to the $^{181}$Ta capture-yield measurements of McDermott show strong agreement in the unresolved resonance region, with results that closely track MCNP. A broader MCNP benchmark study was then used to characterize the correction factor across thickness and geometric variations, confirming that the implementation reproduces the expected behavior and remains accurate over the range of configurations representative of capture-yield experiments.
+
+Small, localized discrepancies were observed near the onset of the first inelastic channel in $^{181}$Ta and in edge-dominated geometries. These effects define practical limits of applicability rather than indicating a failure of the underlying correction model, and they motivate the restricted validation domain used for the fitting tests. Within that domain, the capture-yield correction was successfully integrated into the SAMMY fitting workflow, including simultaneous fitting of multiple sample thicknesses and the legacy coupled-$\ell$ radiative-width treatment. Overall, the results demonstrate that the method is suitable for use in evaluations which utilize capture-yield measurements of self-shielded, thick samples with the correction applied dynamically during optimization.

@@ -1,3 +1,8 @@
+% --- Added for clarity (advisor comments): scope and reference model ---
+This chapter validates the transmission correction workflow as implemented for use within SAMMY.
+The correction factor $C_T$ is computed using the modernized SESH transport-based approach and is exercised inside SAMMY's fitting pipeline.
+Validation is performed by comparison to an MCNP6 reference transport model constructed for the same geometries and using the same evaluated nuclear data, so the comparison primarily tests the correction method and its numerical implementation rather than the underlying cross-section evaluation.
+
 This chapter details and validates the procedure for calculating the theoretical average transmission to accurately fit parameters to self-shielded transmission measurements in the URR\cite{Bahran2015}. As shown in \autoref{sec:correction-factor}, the theoretical average transmission can be calculated as the product of the transmission of the average cross section, $e^{-n\langle \sigma \rangle}$, and a transmission correction factor $C_T$. While $C_T$ was previously defined in \autoref{eq:transmission-correction-factor} with an analytical form over an energy range, this procedure is not feasible in the URR where the true cross-section is unknown. Instead, SESH uses Monte Carlo integration in order to determine these energy-averaged quantities\cite{fitacs}.
 
 \section{Transmission Correction for a Monotopic Sample}
@@ -25,7 +30,7 @@ The accuracy of this method will be validated using $^{181}$Ta, for which a rece
 \section{Verification of the Correction Factor Model}
 Before integrating the transmission correction into the fitting procedure, it is essential to verify that SESH accurately calculates the correction factor itself. The verification was performed by comparing the results from SESH to those from a high-fidelity model of the experiment constructed using MCNP \cite{mcnp}. This MCNP model serves as a computational benchmark\cite{Humbert2014}, providing a ground truth against which the statistical methods in SESH can be compared. Three key physical parameters that could influence the correction factor were investigated: the number of external resonance pairs used in the calculation, the physical thickness of the sample, and the temperature of the sample.
 
-\subsection{MCNP Benchmark Model}
+\subsection{MCNP6 reference Model}
 \label{ssec:mcnp-benchmark-model}
 The MCNP model was configured to simulate neutron transmission through a $^{181}$Ta sample. The cross-section data for the simulation was prepared from the ENDF/B-VIII.1 evaluation \cite{endf-manual} and processed into a pointwise format using NJOY \cite{njoy}. By using the exact, finely-resolved cross sections from a formal evaluation, the MCNP simulation can directly calculate the true average transmission, $\langle T \rangle$, and the transmission of the average cross section, $e^{-n\langle\sigma\rangle}$, over a given energy group. The benchmark correction factor is then calculated as:
 \begin{equation}
@@ -34,14 +39,14 @@ The MCNP model was configured to simulate neutron transmission through a $^{181}
 This provides an ideal reference value, free from the statistical approximations inherent to the SESH methodology, against which SESH's calculations can be validated.
 
 \subsection{Influence of External Resonance Pairs}
-The SESH code includes a feature to add resonance pairs at energies outside of the specific energy bin being analyzed. This is intended to account for the contributions from the tails of distant resonances, which can still influence the cross section within the bin. To quantify the impact of this feature, the correction factor was calculated for a 4mm $^{181}$Ta sample at 300K using an increasing number of external resonance pairs.
+The SESH code includes a feature to add resonance pairs at energies outside of the specific energy bin being analyzed. This is intended to account for the contributions from the tails of distant resonances, which can still influence the cross section within the bin. To quantify the impact of this feature, the correction factor was calculated for a 4~mm $^{181}$Ta sample at 300~K using an increasing number of external resonance pairs.
 
 The results, shown in \autoref{fig:tc-resonance-pairs}, demonstrate that the inclusion of external resonance pairs has a slight but noticeable influence on the calculated correction factor. As more pairs are added, the SESH calculation converges toward the MCNP benchmark value. \autoref{fig:tc-resonance-pairs-error} shows the relative error between SESH and MCNP, confirming that using more resonance pairs produces more accurate results. For the remainder of this work, four external resonance pairs were used in all SESH calculations to ensure a balance between accuracy and computational efficiency.
 
  \begin{figure}[H]
      \centering
      \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ResonancePairInfluenceOnCT.png}
-     \caption{Comparison of the transmission correction factor for a 4mm $^{181}$Ta sample at 300K, calculated with SESH using a varying number of external resonance pairs and compared to the MCNP benchmark.}
+     \caption{Comparison of the transmission correction factor for a 4~mm $^{181}$Ta sample at 300~K, calculated with SESH using a varying number of external resonance pairs and compared to the MCNP benchmark.}
      \label{fig:tc-resonance-pairs}
  \end{figure}
 
@@ -54,9 +59,9 @@ The results, shown in \autoref{fig:tc-resonance-pairs}, demonstrate that the inc
 
 
 \subsection{Verification of Sample Thickness Dependence}
-A critical parameter in self-shielding experiments is the thickness of the sample\cite{Dresner1960}. To determine the range of applicability for SESH, various thicknesses of $^{181}$Ta were simulated, specifically 2mm, 4mm, 8mm, and 12mm. The correction factors calculated by SESH were then compared against the MCNP benchmark for each thickness.
+A critical parameter in self-shielding experiments is the thickness of the sample\cite{Dresner1960}. To determine the range of applicability for SESH, various thicknesses of $^{181}$Ta were simulated, specifically 2~mm, 4~mm, 8~mm, and 12~mm. The correction factors calculated by SESH were then compared against the MCNP benchmark for each thickness.
 
-As shown in \autoref{fig:tc-thickness} and \autoref{fig:tc-thickness-error}, there is very strong agreement between SESH and MCNP for the thinner samples. However, as the sample thickness increases, SESH begins to under-predict the correction factor. This deviation becomes more pronounced for thicker samples, particularly where the correction factor $C_T$ exceeds a value of 1.5. This analysis suggests that to maintain a disagreement of less than 1\%, the use of this method should be limited to samples where the calculated correction factor remains below this threshold.
+As shown in \autoref{fig:tc-thickness} and \autoref{fig:tc-thickness-error}, there is very strong agreement between SESH and MCNP for the thinner samples. However, as the sample thickness increases, SESH begins to under-predict the correction factor. This deviation becomes more pronounced for thicker samples, particularly where the correction factor $C_T$ exceeds a value of 1.5 For practical planning, this provides a simple rule-of-thumb: thicknesses that keep $C_T$ below this threshold in the validated energy range are expected to behave well in the fitting workflow.. This analysis suggests that to maintain a disagreement of less than 1\%, the use of this method should be limited to samples where the calculated correction factor remains below this threshold.
 
  \begin{figure}[H]
      \centering
@@ -74,21 +79,21 @@ As shown in \autoref{fig:tc-thickness} and \autoref{fig:tc-thickness-error}, the
 
 
 \subsection{Verification of Sample Temperature Dependence}
-The final parameter investigated was the sample temperature, which influences the Doppler broadening of the resonances. The $^{181}$Ta evaluation was processed at five different temperatures: 100K, 200K, 300K, 400K, and 500K. These cross sections were used to calculate the correction factor in MCNP for a 4mm thick sample, which was then compared to the SESH results at the same temperatures.
+The final parameter investigated was the sample temperature, which influences the Doppler broadening of the resonances. The $^{181}$Ta evaluation was processed at five different temperatures: 100~K, 200~K, 300~K, 400~K, and 500~K. These cross sections were used to calculate the correction factor in MCNP for a 4~mm thick sample, which was then compared to the SESH results at the same temperatures.
 
 The results, presented in \autoref{fig:tc-temperature} and \autoref{fig:tc-temperature-error}, show a very strong agreement between SESH and MCNP across all examined temperatures. The relative error does not exhibit any significant bias with temperature, indicating that the Doppler broadening and other temperature-dependent physics are correctly modeled in SESH for the purpose of calculating the transmission correction factor.
 
  \begin{figure}[H]
      \centering
      \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/SESH_MCNP_Temperature.png}
-     \caption{Comparison between MCNP and SESH correction factors at various temperatures for a 4mm thick $^{181}$Ta sample.}
+     \caption{Comparison between MCNP and SESH correction factors at various temperatures for a 4~mm thick $^{181}$Ta sample.}
      \label{fig:tc-temperature}
  \end{figure}
 
  \begin{figure}[H]
      \centering
      \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ct_temperature_err.png}
-     \caption{Relative error between SESH and MCNP at various temperatures for a 4mm thick $^{181}$Ta sample.}
+     \caption{Relative error between SESH and MCNP at various temperatures for a 4~mm thick $^{181}$Ta sample.}
      \label{fig:tc-temperature-error}
  \end{figure}
  
@@ -107,14 +112,14 @@ To solve this, a numerical approach was implemented. For a given parameter $u$ (
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeEstimationExample.png}
-    \caption{Estimation of $\partial C_T / \partial u$ for $S_0$ at 3 keV using linear regression.}
+    \caption{Estimation of $\partial C_T / \partial u$ for $S_0$ at 3~keV using linear regression.}
     \label{fig:ct-derivative-regression}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeEstimation.png}
-    \caption{Comparison of variance of calculated derivative using linear regression versus finite difference methods at 3 keV for \textsuperscript{181}Ta.}
+    \caption{Comparison of variance of calculated derivative using linear regression versus finite difference methods at 3~keV for \textsuperscript{181}Ta.}
     \label{fig:ct-derivative-variance}
 \end{figure}
 
