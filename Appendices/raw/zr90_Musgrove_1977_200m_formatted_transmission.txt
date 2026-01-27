@@ -1,0 +1,16 @@
+# zr90_Musgrove_1977_200m
+REACTION         TRANSMISSION
+UNCERTAINTY      ABSOLUTE
+THICKNESS        0.0827
+TEMPERATURE      294
+#                zr90            zr91            zr92            zr94           zr96
+ABUNDANCES       0.9765  0.0093  0.0070  0.0056  0.0016  
+NORMALIZATION    1.00327 0.0500  0.0000  0.0000  0.0000  0.0000
+---
+#Energy (eV)    Value       Uncertainty
+1.7788e+05    0.5438      1.1702e-02
+2.2000e+05    0.5039      9.2747e-03
+2.6653e+05    0.5432      8.0196e-03
+3.1881e+05    0.5862      6.8978e-03
+3.6713e+05    0.5036      5.9973e-03
+4.1137e+05    0.4664      4.5391e-03

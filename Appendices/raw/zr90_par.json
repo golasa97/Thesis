@@ -1,0 +1,41 @@
+{
+    "name" : "zr-90",
+    "radius" : 6.31,
+    "mass" : 89.9047,
+    "elasticAndInelasticStates" : [
+        { "energy_eV" : 0.0,       "Spin" : 0, "Parity" : 1.0},
+        { "energy_eV" : 1760740.0, "Spin" : 0, "Parity" : 1.0},
+        { "energy_eV" : 2186273.0, "Spin" : 2, "Parity" : 1.0},
+        { "energy_eV" : 2319000.0, "Spin" : 5, "Parity" : 1.0}
+    ],
+    "resonance parameters" : [
+        {
+            "Emin_eV" : 0.0,
+            "Emax_eV" : 2.5e6,
+            "Binding_Energy_eV" : 7.195e6,
+            "Pairing_Energy_eV" : 1.25794e6,
+            "Strength" : 
+                [
+                    {"value" : 0.3740e-4,"uncertainty" : 0.156e-4 },
+                    {"value" : 4.1736e-4,"uncertainty" : 0.367e-4 },
+                    {"value" : 0.4005e-4,"uncertainty" : 0.085e-4 }
+                ],
+            "Rinf" :
+                [
+                    {"value" : -0.922715,"uncertainty" : 0.04400 },
+                    {"value" : -0.133222,"uncertainty" : 0.06300 },
+                    {"value" : -0.207163,"uncertainty" : 0.08900 }
+                ],
+            "Gamma_Gamma_eV" : 
+                [
+                    {"value" : 0.223,"uncertainty" : 0.0500 },
+                    {"value" : 0.430,"uncertainty" : 0.0500 },
+                    {"value" : 0.223,"uncertainty" : 0.0500 }
+                ],
+            "Level_Spacing_eV" : 
+                [
+                    {"value" : 9459.0,"uncertainty" : 0.0000 }
+                ]
+        }
+    ]
+}

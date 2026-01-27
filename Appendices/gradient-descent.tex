@@ -1,0 +1,83 @@
+\chapter{Gradient Descent Algorithm}
+\label{app:gradient-descent}
+The goal of the fit is to determine a parameter vector $\mathbf{p}=(p_1,\dots,p_n)$ such that the model predictions $\mathbf{t}(\mathbf{p})$ best reproduce the measured data $\mathbf{d}=(d_1,\dots,d_m)$. With independent experimental uncertainties $\sigma_j$, this is posed as minimizing the chi-squared objective
+\begin{equation}
+\chi^2(\mathbf{p}) \;=\; \sum_{j=1}^{m}
+\left(\frac{d_j - t_j(\mathbf{p})}{\sigma_j}\right)^2.
+\label{eq:chi2_scalar}
+\end{equation}
+To determine how parameters should be adjusted, the fitter requires the gradient of $\chi^2$ with respect to each parameter, $g_i \equiv \partial \chi^2/\partial p_i$.
+
+First compute the derivative of $\chi^2$ with respect to the theoretical values $\mathbf{t}$, holding $\mathbf{p}$ fixed. Differentiating \autoref{eq:chi2_scalar} with respect to a particular theory component $t_j$ gives
+\begin{equation}
+\frac{\partial \chi^2}{\partial t_j}
+\;=\;
+-2\,\frac{d_j - t_j(\mathbf{p})}{\sigma_j^2}
+\;=\;
+2\,\frac{t_j(\mathbf{p})-d_j}{\sigma_j^2}.
+\label{eq:dchi2_dt}
+\end{equation}
+Next, apply the chain rule to propagate this sensitivity through the model dependence $t_j(\mathbf{p})$:
+\begin{equation}
+g_i \;\equiv\; \frac{\partial \chi^2}{\partial p_i}
+\;=\;
+\sum_{j=1}^{m}
+\frac{\partial \chi^2}{\partial t_j}\,
+\frac{\partial t_j}{\partial p_i}.
+\label{eq:chainrule_J}
+\end{equation}
+Substituting \autoref{eq:dchi2_dt} into \autoref{eq:chainrule_J} yields
+\begin{equation}
+g_i
+=
+2\sum_{j=1}^{m}
+\frac{t_j(\mathbf{p})-d_j}{\sigma_j^2}\,
+\frac{\partial t_j(\mathbf{p})}{\partial p_i}.
+\label{eq:chi2_grad_from_J}
+\end{equation}
+
+In matrix form, the Jacobian is defined as
+$J_{ji} \equiv \partial t_j/\partial p_i$,
+the diagonal weight matrix $W$ with $W_{jj}=1/\sigma_j^2$,
+and the residual vector $\mathbf{t}(\mathbf{p})-\mathbf{d}$.
+Then \autoref{eq:chi2_grad_from_J} can be written compactly as
+\begin{equation}
+\mathbf{g} \;=\; 2\,J^T\,W\,\left(\mathbf{t}(\mathbf{p})-\mathbf{d}\right).
+\label{eq:g_compact}
+\end{equation}
+Thus, once the model provides $J=\partial \mathbf{t}/\partial \mathbf{p}$, the fitter directly constructs the $\chi^2$ gradient $\mathbf{g}$ using the experimental weights and the current theory--data mismatch.
+
+Parameters are updated iteratively using a variance-normalized gradient step:
+\begin{equation}
+p_i^{(k+1)} \;=\; p_i^{(k)} \;-\; \eta\,\tilde{g}_i^{(k)},
+\label{eq:gd_update_compact}
+\end{equation}
+where $\eta$ is the learning rate and $\tilde{\mathbf{g}}$ is a variance-normalized version of $\mathbf{g}$.
+
+Let $\sigma_{p_i}$ denote the prior (initial) $1\sigma$ uncertainty assigned to parameter $p_i$ (with independent priors). The variance-normalized gradient is defined as
+\begin{equation}
+\tilde{g}_i \;\equiv\;
+\frac{\sigma_{p_i}^2\, g_i}{\left\|\tilde{\mathbf{g}}\right\|},
+%{\sqrt{\sum_{\ell=1}^{n}\left(\sigma_{p_\ell}\,g_\ell\right)^2}},
+\label{eq:variance_normalized_grad}
+\end{equation}
+where the denominator is the (prior-scaled) gradient norm,
+\begin{equation}
+\left\|\tilde{\mathbf{g}}\right\|
+\;\equiv\;
+\sqrt{\sum_{\ell=1}^{n}\left(\sigma_{p_\ell}\,g_\ell\right)^2 }.
+\label{eq:whitened_norm_simple}
+\end{equation}
+
+This scaling has two effects. First, multiplying by $\sigma_{p_i}^2$ weights updates toward parameters that are less certain \emph{a priori}, and suppresses movement in parameters with tight priors. Second, normalizing by the variance-adjusted norm makes the overall step length largely independent of the raw gradient magnitude and measures the step size in units set by the prior parameter scales. This is particularly helpful when fitted parameters span many orders of magnitude and when the objective function is strongly nonlinear in subsets of parameters.
+
+After the best-fit parameters $\mathbf{p}^\star$ are obtained, parameter uncertainties are estimated from the local curvature of $\chi^2$ at the optimum. Under the standard linearized approximation,
+\begin{equation}
+C_{\mathbf{p}}
+\;\approx\;
+\left(J^{T} W J\right)^{-1}\Bigg|_{\mathbf{p}^\star},
+\label{eq:param_cov_simple}
+\end{equation}
+and the reported $1\sigma$ uncertainty on parameter $p_i$ is
+$\sigma_{p_i}^{(\text{post})} = \sqrt{(C_{\mathbf{p}})_{ii}}$.
+

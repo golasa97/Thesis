@@ -12,6 +12,32 @@
 \usepackage{adjustbox}
 \usepackage{subcaption}
 
+
+\usepackage[final]{minted}
+\usepackage{xcolor}
+\usepackage{fvextra} % better line breaking
+
+% Global minted style
+
+\usepackage{fvextra} % improves breaklines a lot
+\setminted{
+  fontsize=\footnotesize,
+  breaklines=true,
+  breakanywhere=true,
+  linenos=true,
+  numbersep=4pt,
+  frame=lines,
+  framesep=2mm,
+  tabsize=2
+}
+
+
+% Optional: a softer background box
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+\setminted{
+  bgcolor=codebg
+}
+
 %\usepackage{draftwatermark}
 
 \usepackage{tikz} % Required for drawing the watermark in the foreground
@@ -234,6 +260,12 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%%  For Appendices  %%%%%%%%%%%%%%%%%%%
+
+\input{Appendices/fitapi}
+
+\input{Appendices/gradient-descent}
+
+\input{Appendices/endf-covariances}
 
 %Note the numbering of the chapter heading is changed.
 %This is a sentence to take up space and look like text.

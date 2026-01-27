@@ -1,0 +1,13 @@
+# Add an adjustment to the Strength Function for L=1
+# Intermediate structure from valence state. E_s = 700 keV, W = 275keV, reduced_width=400
+PARAM STRENGTH L=1
+2.00000e+05 5.37644e-05
+2.01801e+05 5.40629e-05
+2.03602e+05 5.43636e-05
+2.05403e+05 5.46665e-05
+2.07204e+05 5.49718e-05
+2.09005e+05 5.52793e-05
+2.10805e+05 5.55891e-05
+2.12606e+05 5.59013e-05
+2.14407e+05 5.62159e-05
+2.15308e+05 5.63740e-05
