@@ -133,7 +133,7 @@ The parameters of significance to transmission self-shielding in the URR, which 
         \begin{figure}[H]
             \centering
             \begin{adjustbox}{width=1.2\textwidth, center}
-            \includegraphics{Implementation/Figures/validating-level-spacing.png} 
+            \includegraphics{Implementation/Figures/validating-level-spacing.pdf} 
             \end{adjustbox}
             \caption{Validating the improved level spacing model in SESH with \textsuperscript{181}Ta spin groups from ENDF-8.1 Evaluation}
             \label{fig:level=spacing=validation}
@@ -248,7 +248,7 @@ Therefore, the sampled $s_{observed}$ was determined by:
 This observed width was collected into a set and compared to the sampled values from Fr\"{o}hner's implementation of \autoref{eq:weighted-wigner}.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{Implementation/Figures/weighted-wigner-validation.png}
+    \includegraphics[width=0.75\linewidth]{Implementation/Figures/weighted-wigner-validation.pdf}
     \caption{Validation of Frohner's implementation of the weighted Wigner level spacing algorithm}
     \label{fig:weighted-wigner}
 \end{figure}
@@ -271,7 +271,7 @@ When testing SESH theoretical values, there was an observed disagreement in cros
     In instances where $\beta \leq 0.01$, the algorithm would incorrectly return the 0 Kelvin value for the $\psi$ parameter, shown in \autoref{fig:beta-error}.
     \begin{figure}[h]
         \centering
-        \includegraphics[width=0.75\linewidth]{Implementation/Figures/beta-error.png}
+        \includegraphics[width=0.99\linewidth]{Implementation/Figures/beta-error.pdf}
         \caption{Comparing results of SESH's Faddeeva function output with what the Faddeeva function actually calculates given the same inputs.}
         \label{fig:beta-error}
     \end{figure}
@@ -281,7 +281,7 @@ When testing SESH theoretical values, there was an observed disagreement in cros
     The solution was to implement a newer computation of the Faddeeva function\cite{faddeeva}. This resolved the issues present in the original algorithm present in SESH, but also reduced error of the function at all values of $\beta$, shown in \autoref{fig:faddeeva-algorithm}.
     \begin{figure}[H]
         \centering
-        \includegraphics[width=0.75\textwidth]{Implementation/Figures/DopplerBroadenedBeta.png}
+        \includegraphics[width=0.75\textwidth]{Implementation/Figures/DopplerBroadenedBeta.pdf}
         \caption{Faddeeva function error for old and new algorithms as a function of $\beta$.}
         \label{fig:faddeeva-algorithm}
     \end{figure}
