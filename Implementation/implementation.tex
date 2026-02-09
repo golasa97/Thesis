@@ -58,9 +58,9 @@ The parameters that distinguish this average cross section from a simple energy 
 \label{sec:param-conversion}
     As described in \autoref{sec:mc-sampling-from-average-parameters}, accurately modeling resonance self-shielding requires stochastically sampling resonance ladders to account for cross-section variance. While \autoref{eq:hauser-feshbach-cross-section} provides a convenient analytical form for the \textit{average} cross section, it does not capture the fluctuations around that average. Computing self-shielding correction factors therefore requires generating statistical realizations of the cross section from Monte Carlo--sampled resonance ladders, as described in the theory chapter.
 
-    This presents a fundamental mismatch between two representations of URR nuclear data. The Hauser-Feshbach average cross section (\autoref{eq:hauser-feshbach-cross-section}) is parameterized by optical-model quantities---the strength function $S_\ell$, the distant-level parameter $R_\ell^\infty$, and the s-wave average level spacing $D_0$---all defined on an orbital angular momentum ($\ell$) basis. These $\ell$-dependent parameters are natural for describing the average cross section and are the quantities that SAMMY varies during the fitting process.
+    This presents a fundamental mismatch between two representations of URR nuclear data. The Hauser-Feshbach average cross section (\autoref{eq:hauser-feshbach-cross-section}) is parameterized by optical-model quantities, namely the strength function $S_\ell$, the distant-level parameter $R_\ell^\infty$, and all parameters are defined on an orbital angular momentum ($\ell$) basis. These $\ell$-dependent parameters are natural for describing the average cross section and are the quantities that SAMMY varies during the fitting process.
 
-    However, the Monte Carlo resonance simulation described in \autoref{sec:sampling-parameters} requires a different set of parameters: the $J$-dependent average level spacing $D_J$ and the channel-dependent average neutron width $\langle \Gamma_{n,J}^{\ell} \rangle$. Actual nuclear resonances are associated with specific compound nuclear states, each characterized by a total angular momentum $J$, orbital angular momentum $\ell$, and parity $\pi$\cite{Lynn1968}. The $\ell$-dependent optical-model parameters cannot be used to generate resonance ladders directly; they must first be converted to channel-dependent statistical resonance parameters.
+    However, the Monte Carlo resonance simulation described in \autoref{sec:sampling-parameters} requires a different set of parameters: the $J$-dependent average level spacing $D_J$ and the channel-dependent average neutron width $\langle \Gamma_{n,J}^{\ell} \rangle$. Actual nuclear resonances are associated with specific compound nuclear states, each characterized by a total angular momentum $J$, orbital angular momentum $\ell$, and parity $\pi$\cite{Lynn1968}. The $\ell$-dependent optical-model parameters cannot be used to generate resonance ladders directly. They must first be converted to channel-dependent statistical resonance parameters.
 
     This conversion can be summarized as three steps:
     \begin{enumerate}
@@ -79,7 +79,7 @@ The parameters that distinguish this average cross section from a simple energy 
             \mathbf{J}_{-} &= \left\{ \left|s_{-} - \ell\right|, \left|s_{-} - \ell\right| + 1, \cdots, s_{-} + \ell \right\}\\
             \mathbf{J}_{+} &= \left\{ \left|s_{+} - \ell\right|, \left|s_{+} - \ell\right| + 1, \cdots, s_{+} + \ell \right\}
         \end{align}
-        A common assumption in URR evaluations is that average resonance parameters are independent of parity\cite{endf-manual}, i.e., the statistical properties of resonances with quantum numbers $(J, \ell, \pi = (-1)^\ell)$ are treated as identical to those with $(J, \ell+1, \pi = (-1)^{\ell+1})$ when both have the same $J$. As a consequence, only $J$ and $\ell$ need to be considered when generating resonance ladders. Instead, the important factor to track is the multiplicity $\mu$: if the same $J$ value can be formed from both $s_{+}$ and $s_{-}$ channel spins, then $\mu = 2$; otherwise $\mu = 1$. This overlap is illustrated in \autoref{eq:multiplicities}:
+        A common assumption in URR evaluations is that average resonance parameters are independent of parity\cite{endf-manual}, i.e., the statistical properties of resonances with quantum numbers $(J, \ell, \pi = (-1)^\ell)$ are treated as identical to those with $(J, \ell+1, \pi = (-1)^{\ell+1})$ when both have the same $J$. As a consequence, only $J$ and $\ell$ need to be considered when generating resonance ladders. Instead, the important factor to track is the multiplicity $\mu$: if the same $J$ value can be formed from both $s_{+}$ and $s_{-}$ channel spins, then $\mu = 2$. Otherwise $\mu = 1$. This overlap is illustrated in \autoref{eq:multiplicities}:
 
         \begin{equation}
             \label{eq:multiplicities}
@@ -90,7 +90,7 @@ The parameters that distinguish this average cross section from a simple energy 
             \mathbf{\mu}_J: & \{ & 1, & 2, & \dots, & 2, & 1 & \} \\
             \end{array}
         \end{equation}
-        The physical significance of the multiplicity is that it determines the number of degrees of freedom for the $\chi^2$ distribution from which neutron widths are sampled\cite{PorterThomas1956}. When $\mu = 2$, the neutron width is sampled from a $\chi^2$ distribution with two degrees of freedom rather than one. By utilizing this assumption, the number of resonance ladders that must be independently sampled is nearly halved, since two channel spins sharing the same $J$ are treated as a single effective channel.
+        The physical significance of the multiplicity is that it determines the number of degrees of freedom for the $\chi^2$ distribution from which neutron widths are sampled\cite{Porter1956}. When $\mu = 2$, the neutron width is sampled from a $\chi^2$ distribution with two degrees of freedom rather than one. By utilizing this assumption, the number of resonance ladders that must be independently sampled is nearly halved, since two channel spins sharing the same $J$ are treated as a single effective channel.
     
         The complete vector of unique channels, $\mathbf{C}$, is constructed by compiling the $\mathbf{J}_{tot}$ and $\boldsymbol{\mu}_J$ vectors for each orbital angular momentum $\ell$ up to the maximum $\ell$ value included in the evaluation. Each element of $\mathbf{C}$ is defined as:
         \begin{equation}
@@ -125,7 +125,7 @@ The parameters that distinguish this average cross section from a simple energy 
         \begin{equation}
             \sigma_J^2(E) = 0.14592 \cdot (A+1)^{2/3}\sqrt{a_{\text{ld}}(E + B_E - P_E)}
         \end{equation}
-        in which $A$ is the mass number of the target nucleus, $a_{\text{ld}}$ is the level density parameter (in MeV$^{-1}$), $B_E$ is the back-shift energy (in MeV), and $P_E$ is the pairing energy (in MeV). These quantities are obtained from the Gilbert-Cameron composite level density model\cite{gc-leveldensity}. The Bethe formula allows $D_J/D_0$ to evolve as a function of energy more realistically compared to the simple approximation in \autoref{eq:simple-j-dependency}, particularly for high-$J$ states and at higher energies where the spin cutoff parameter varies significantly.
+        in which $A$ is the mass number of the target nucleus, $a_{\text{ld}}$ is the level density parameter (in MeV$^{-1}$), $B_E$ is the binding energy (in MeV), and $P_E$ is the pairing energy (in MeV). These quantities are obtained from the Gilbert-Cameron composite level density model\cite{gc-leveldensity}. The Bethe formula allows $D_J/D_0$ to evolve as a function of energy more realistically compared to the simple approximation in \autoref{eq:simple-j-dependency}, particularly for high-$J$ states and at higher energies where the spin cutoff parameter varies significantly.
         
         The energy dependence of $D_0$ itself is also accounted for using the Gilbert-Cameron level density model\cite{gc-leveldensity}. This aspect already matched SAMMY's existing implementation and was therefore left unchanged.
 
@@ -232,6 +232,8 @@ The parameters that distinguish this average cross section from a simple energy 
 
 With all channel-dependent parameters established by the conversions in the preceding sections, the Monte Carlo sampling procedure outlined conceptually in \autoref{sec:sampling-parameters} can now be stated concretely. The goal is to generate an ensemble of cross-section realizations $\{\sigma_1, \sigma_2, \ldots, \sigma_N\}$ from which the correction factor $C_T$ is computed.
 
+This procedure rests on two assumptions about the energy bin over which $\langle \sigma \rangle$ is defined. First, the bin must be wide enough to contain a statistically meaningful number of resonances, so that the sampled ensemble accurately represents the distribution of cross-section values within the bin. Second, the bin must be narrow enough that all slowly varying energy-dependent quantities (e.g., the potential scattering cross section, the penetrability factors, and the average resonance parameters themselves) can be treated as constant across the bin. Under these conditions, each sampled realization uses the same values of $\sigma_p$, $V_\ell$, $D_J$, and $\langle \Gamma_{n,J}^\ell \rangle$, and only the stochastically sampled resonance parameters ($E_r$, $\Gamma_{n,r}$) vary between realizations. These are the defining conditions of the idealized URR: average parameters are purely statistical, and the self-shielding correction depends only on the variance they produce. The consequences of violating these assumptions (particularly the finite-resonance effect that arises when the bin contains too few resonances) are partially addressed in \autoref{chap:uncertainty}.
+
 For each realization $i$, the following steps are performed for every channel $c_j = (J_j, \ell_j, \mu_j)$ in the channel list (\autoref{eq:channel-list}):
 
 \begin{enumerate}
@@ -244,7 +246,7 @@ For each realization $i$, the following steps are performed for every channel $c
     \begin{equation}
         E_{r+1} = E_r + s
     \end{equation}
-    In practice, SESH does not build a full resonance ladder across the entire URR; instead, it samples only the resonances in the vicinity of the energy of interest using a weighted Wigner distribution, as described in \autoref{sec:weighted-wigner-validation}.
+    In practice, SESH does not build a full resonance ladder across the entire URR. Instead, it samples only the resonances in the vicinity of the energy of interest using a weighted Wigner distribution, as described in \autoref{sec:weighted-wigner-validation}.
 
     \item \textbf{Sample neutron widths.} For each resonance $r$ in the ladder, the neutron width is sampled from a $\chi^2$ distribution with $\mu_j$ degrees of freedom, scaled by the average neutron width:
     \begin{equation}

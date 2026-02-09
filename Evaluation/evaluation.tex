@@ -191,7 +191,7 @@ Seven p-wave ($1/2^-$) and three s-wave ($1/2^+$) doorway states were included i
     \end{tabular}
 \end{table}
 
-The dominant contributions come from the p-wave doorways at 0.529, 0.700, and 0.860~MeV, which together account for the broad cross-section enhancement observed in the experimental data. States with fitted spreading widths at the upper bound (600~keV) are either very broad or poorly constrained by the available data. The fitted distant-level parameters were $R^\infty_0 = 0.093$ and $R^\infty_1 = -0.056$.
+The dominant contributions come from the p-wave doorways at 0.529, 0.700, and 0.860~MeV, which together account for the broad cross-section enhancement observed in the experimental data. States with fitted spreading widths at the upper bound (600~keV) are either very broad or poorly constrained by the available data. The fitted distant-level parameters were $R^\infty_0 = 0.162$ and $R^\infty_1 = -0.095$.
 
 
 
@@ -341,20 +341,21 @@ The final fitted URR parameters for $^{90}$Zr are presented in \autoref{tab:zr90
 
 \begin{table}[h!]
     \centering
-    \caption{Final fitted compound nucleus URR parameters for $^{90}$Zr. The doorway state parameters are given separately in \autoref{tab:doorway_parameters}.}
+    \caption{Initial and final compound nucleus URR parameters for $^{90}$Zr. Initial values are the starting parameters provided to the fitting code; final values are the converged result. The doorway state parameters are given separately in \autoref{tab:doorway_parameters}. The $\ell = 2$ radiation width is linked to $\ell = 0$.}
     \label{tab:zr90_final_parameters}
-    \begin{tabular}{c c c c}
+    \begin{tabular}{c cc cc cc}
         \hline
-        $\ell$ & $S_\ell^{\mathrm{CN}}$ ($\times 10^{-4}$) & $R_\ell^\infty$ & $\langle\Gamma_\gamma\rangle$ (eV) \\
+        & \multicolumn{2}{c}{$S_\ell^{\mathrm{CN}}$ ($\times 10^{-4}$)} & \multicolumn{2}{c}{$R_\ell^\infty$} & \multicolumn{2}{c}{$\langle\Gamma_\gamma\rangle$ (eV)} \\
+        $\ell$ & Initial & Final & Initial & Final & Initial & Final \\
         \hline
-        0 & $0.54 \pm 0.05$ & $0.093 \pm 0.02$ & $0.248 \pm 0.011$ \\
-        1 & $3.80 \pm 0.20$ & $-0.056 \pm 0.03$ & $0.140 \pm 0.023$ \\
-        2 & $1.91 \pm 0.18$ & $-0.188 \pm 0.03$ & $0.248 \pm 0.011$ \\
+        0 & 0.616 & 0.714 & $-0.018$ & $0.162$ & 0.224 & 0.174 \\
+        1 & 5.251 & 4.123 & $-0.114$ & $-0.095$ & 0.430 & 0.340 \\
+        2 & 2.099 & 1.257 & $-0.231$ & $-0.233$ & --- & --- \\
         \hline
     \end{tabular}
 \end{table}
 
-The s-wave and p-wave distant-level parameters differ notably from the prior RRR values, reflecting the adjustment needed to accommodate the smooth baseline contribution from the doorway states. The compound nucleus p-wave strength function ($S_1^{\mathrm{CN}} = 3.80 \times 10^{-4}$) is lower than the RRR-derived prior ($5.39 \times 10^{-4}$) because the doorway states now explicitly account for much of the observed p-wave strength.
+The s-wave and p-wave distant-level parameters differ notably from the prior RRR values, reflecting the adjustment needed to accommodate the smooth baseline contribution from the doorway states. The compound nucleus p-wave strength function ($S_1^{\mathrm{CN}} = 4.12 \times 10^{-4}$) is lower than the RRR-derived prior ($5.39 \times 10^{-4}$) because the doorway states now explicitly account for much of the observed p-wave strength.
 
 \begin{figure}[h!]
     \centering
@@ -400,15 +401,16 @@ The final fitted URR parameters for $^{91}$Zr are presented in \autoref{tab:zr91
 
 \begin{table}[h!]
     \centering
-    \caption{Final fitted URR parameters for $^{91}$Zr.}
+    \caption{Initial and final URR parameters for $^{91}$Zr. Initial values are the starting parameters provided to the fitting code; final values are the converged result. The $\ell = 2$ radiation width is linked to $\ell = 0$.}
     \label{tab:zr91_final_parameters}
-    \begin{tabular}{c c c c}
+    \begin{tabular}{c cc cc cc}
         \hline
-        $\ell$ & $S_\ell$ ($\times 10^{-4}$) & $R_\ell^\infty$ & $\langle\Gamma_\gamma\rangle$ (eV) \\
+        & \multicolumn{2}{c}{$S_\ell$ ($\times 10^{-4}$)} & \multicolumn{2}{c}{$R_\ell^\infty$} & \multicolumn{2}{c}{$\langle\Gamma_\gamma\rangle$ (eV)} \\
+        $\ell$ & Initial & Final & Initial & Final & Initial & Final \\
         \hline
-        0 & $0.398 \pm 0.021$ & $-0.231 \pm 0.017$ & $0.151 \pm 0.005$ \\
-        1 & $5.071 \pm 0.162$ & $-0.217 \pm 0.050$ & $0.194 \pm 0.006$ \\
-        2 & $0.321 \pm 0.080$ & $-0.263 \pm 0.041$ & $0.151 \pm 0.005$ \\
+        0 & 0.399 & 0.382 & $-0.189$ & $-0.198$ & 0.165 & 0.160 \\
+        1 & 5.006 & 5.127 & $-0.226$ & $-0.215$ & 0.237 & 0.232 \\
+        2 & 0.325 & 0.255 & $-0.274$ & $-0.258$ & --- & --- \\
         \hline
     \end{tabular}
 \end{table}
@@ -456,11 +458,11 @@ The capture cross-section covariance (\autoref{fig:eval_zr91_capxs_covariance}) 
 \subsection{Fit Quality Summary}
 \label{ssec:eval_fit_summary}
 
-The quantitative fit quality for all datasets is summarized in \autoref{tab:chi2_summary}. The $\chi^2/N$ values reflect the combined experimental and model uncertainties used in the fitting procedure.
+The quantitative fit quality for all datasets is summarized in \autoref{tab:chi2_summary}.
 
 \begin{table}[h!]
     \centering
-    \caption{Summary of fit quality ($\chi^2/N$) for all transmission datasets.}
+    \caption{Summary of fit quality ($\chi^2/N$) for all transmission datasets, computed using experimental (statistical) uncertainties only.}
     \label{tab:chi2_summary}
     \begin{tabular}{l l c c}
         \hline
@@ -468,22 +470,22 @@ The quantitative fit quality for all datasets is summarized in \autoref{tab:chi2
         \hline
         \multicolumn{4}{c}{\textit{Enriched samples (used in fit)}} \\
         \hline
-        Green (1973) $^{90}$Zr     & Enriched & XX & X.XX \\
-        Musgrove (1977) $^{90}$Zr  & Enriched & XX & X.XX \\
-        Musgrove (1977) $^{91}$Zr  & Enriched & XX & X.XX \\
+        Green (1973) $^{90}$Zr     & Enriched & 12 & 6.58 \\
+        Musgrove (1977) $^{90}$Zr  & Enriched & 14 & 23.63 \\
+        Musgrove (1977) $^{91}$Zr  & Enriched & 8 & 22.21 \\
         \hline
         \multicolumn{4}{c}{\textit{Natural samples (validation only)}} \\
         \hline
-        Rapp (2019) Nat-Zr, 6~cm   & Natural  & XX & X.XX \\
-        Rapp (2019) Nat-Zr, 10~cm  & Natural  & XX & X.XX \\
+        Rapp (2019) Nat-Zr, 6~cm   & Natural  & 13 & 77.48 \\
+        Rapp (2019) Nat-Zr, 10~cm  & Natural  & 13 & 36.25 \\
         \hline
     \end{tabular}
 \end{table}
 
 
-The enriched datasets show $\chi^2/N$ values close to unity when the self-shielding model uncertainty is properly included, demonstrating that the combined experimental and model uncertainties provide a realistic estimate of the total uncertainty budget.
+The $\chi^2/N$ values in \autoref{tab:chi2_summary} are computed using only the reported experimental uncertainties and are therefore substantially greater than unity. This reflects the significance of the self-shielding model uncertainty (\autoref{ssec:eval_ct_uncertainty}): when the model uncertainty is included in the total uncertainty budget via \autoref{eq:total_uncertainty}, the $\chi^2/N$ values for the enriched datasets decrease toward unity, confirming that the combined experimental and model uncertainties provide a realistic estimate of the total uncertainty. The Green (1973) dataset shows the best agreement ($\chi^2/N = 6.58$), consistent with its broader energy coverage providing more effective averaging of statistical fluctuations.
 
-The natural zirconium validation datasets show larger $\chi^2/N$ values, reflecting both the independent nature of these measurements and the limitations in the other zirconium isotopes that were not re-evaluated. A comprehensive re-evaluation of all stable zirconium isotopes would be required to achieve optimal agreement with natural zirconium data.
+The natural zirconium validation datasets show substantially larger $\chi^2/N$ values, reflecting both the independent nature of these measurements and the limitations in the other zirconium isotopes ($^{92,94,96}$Zr) that were not re-evaluated. The 6~cm Rapp sample shows the largest $\chi^2/N$, driven by the strong intermediate-structure region where the combined isotopic cross section is most sensitive to the other zirconium isotopes. A comprehensive re-evaluation of all stable zirconium isotopes would be required to achieve optimal agreement with natural zirconium data.
 
 
 

@@ -137,7 +137,11 @@ For a given channel $c$, defined by the quantum numbers $J$, $\ell$, and parity 
             \right)
         \right\}
 \end{equation}
-Here $k_c$ is the neutron wave number, $g_c = (2J+1)/[2(2I+1)]$ is the statistical spin factor for a target nucleus with ground-state spin $I$, and $\phi_c$ is the hard-sphere scattering phase shift, which depends on the channel radius and orbital angular momentum $\ell$. Each resonance $r$ is characterized by its energy $E_r$, neutron width $\Gamma_{n,r,c}$, and total width
+Here $k_c$ is the neutron wave number, $g_c = (2J+1)/[2(2I+1)]$ is the statistical spin factor for a target nucleus with ground-state spin $I$, and $\phi_c$ is the hard-sphere scattering phase shift, which depends on the channel radius and orbital angular momentum $\ell$. 
+
+Note that the cross section in \autoref{eq:slbw} is written as $\sigma_c$ rather than $\sigma_c(E)$. In the URR context, this is deliberate. The sampled cross section is not intended to represent the cross section at a specific energy, but rather a statistical realization of the cross section at any energy within the bin over which the energy-averaged cross section $\langle \sigma \rangle$ is defined. The energy dependence enters implicitly through the sampled resonance parameters ($E_r$, $\Gamma_{n,r}$), which are drawn from statistical distributions that characterize the entire bin. A single realization $\sigma_c$ is therefore one draw from the population of cross-section values that the true, fluctuating cross section assumes across that energy bin.
+
+Each resonance $r$ is characterized by its energy $E_r$, neutron width $\Gamma_{n,r,c}$, and total width
 \begin{equation}
     \label{eq:total-width}
     \Gamma_{tot} = \Gamma_n + \Gamma_\gamma + \Gamma_{n'}
