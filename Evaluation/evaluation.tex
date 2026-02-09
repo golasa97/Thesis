@@ -3,12 +3,12 @@
 
 Zirconium and its isotopes are significant materials in nuclear engineering, frequently used as cladding for nuclear fuel rods and in structural components within reactor cores due to their low thermal neutron absorption cross-section and high resistance to corrosion. Accurate nuclear data for Zirconium isotopes is therefore critical for the safe and efficient design and operation of nuclear reactors. However, existing nuclear data evaluations for Zirconium, particularly in the unresolved resonance region (URR), exhibit several known deficiencies.
 
-A prominent issue is the failure of the current ENDF/B-VIII.0 evaluations to properly model isotopic data. As shown in \autoref{fig:eval_deficiency_structure}, the evaluations are using infinitely dilute cross-sections (File 3 data) derived from natural Zirconium measurements, which are then applied incorrectly to isotopic evaluations. This leads to non-physical artifacts, such as the propagation of resonant structures unique to $^{90}$Zr into the evaluation for $^{91}$Zr, where no such structure is experimentally observed.
+A prominent issue is the failure of the current ENDF/B-VIII.1 evaluations to properly model isotopic data. As shown in \autoref{fig:eval_deficiency_structure}, the evaluations are using infinitely dilute cross-sections (File 3 data) derived from natural Zirconium measurements, which are then applied incorrectly to isotopic evaluations. This leads to non-physical artifacts, such as the propagation of resonant structures unique to $^{90}$Zr into the evaluation for $^{91}$Zr, where no such structure is experimentally observed.
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.95\textwidth]{Evaluation/Figures/motivation-discreps-pars.png}
-    \caption{Comparison of enriched transmission measurements (Musgrove, Green) against calculations based on the ENDF/B-VIII.0 evaluation, highlighting mismatches in the URR.}
+    \caption{Comparison of enriched transmission measurements (Musgrove, Green) against calculations based on the ENDF/B-VIII.1 evaluation, highlighting mismatches in the URR.}
     \label{fig:eval_deficiency_structure}
 \end{figure}
 
@@ -19,7 +19,7 @@ A prominent issue is the failure of the current ENDF/B-VIII.0 evaluations to pro
     \label{fig:eval_deficiency_file2}
 \end{figure}
 
-A further deficiency observed in \autoref{fig:eval_deficiency_file2} is the significant deviation between theoretical cross-sections calculated from $^{91}$Zr URR parameters and experiment. Paradoxically, the natural zirconium data appears to be better represented by the current evaluation than the isotopic data---a symptom of compensating errors between the individual isotopic evaluations. This situation is unphysical and indicates that the current File 2 parameters do not accurately represent the isotopic behavior when considered individually.
+A further deficiency observed in \autoref{fig:eval_deficiency_file2} is the significant deviation between theoretical cross-sections calculated from $^{91}$Zr URR parameters and experiment. Paradoxically, the natural zirconium data appears to be better represented by the current evaluation than the isotopic data. This is a symptom of compensating errors between the individual isotopic evaluations. This situation is unphysical and indicates that the current File 2 parameters do not accurately represent the isotopic behavior when considered individually.
 
 Additionally, a key deficiency is the un-represented intermediate structure in the p-wave neutron cross-section of $^{90}$Zr. This non-statistical effect, often attributed to a doorway state mechanism, is a known feature of the cross-section that is not captured by the statistical treatment of the URR in current evaluations. This omission, combined with the other issues, leads to inaccuracies in reactor physics calculations that are sensitive to the detailed resonance structure.
 

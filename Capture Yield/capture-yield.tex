@@ -92,7 +92,7 @@ Therefore, there are three distances that must be calculated:
 \end{align*}
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/ms_face_intersection.png}
+    \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/InteractionSideDemo.pdf}
     \caption{Example of the face intersection scheme, resulting in $d_{front}$ being selected as the shortest face until the particle exits.}
     \label{fig:ms-face-intersection}
 \end{figure}
@@ -298,19 +298,30 @@ in which
         x &= R\sqrt{\zeta}, \qquad y=R\sqrt{\zeta} \\
     \end{align*}
     Consequently, rather than the intended circular beam with uniform probability the distribution was a non-uniform, square beam. This was replaced with an improved sampling algorithm which correctly sampled across the face of the cylinder. A comparison between the original and improved algorithms is shown in \autoref{fig:loc-sampling-2d-comparison}.
-    \begin{figure}[h]
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[c]{0.48\textwidth}
         \centering
-        \begin{adjustbox}{width=1.2\textwidth, center}
-            \includegraphics{Capture Yield/Figures/sampling_2d_comparison.png}
-        \end{adjustbox}
-        \caption{Comparing the observed distribution of sampled neutron incident locations across the face of a cylindrical target from original SESH algorithm versus the new implementation}
-        \label{fig:loc-sampling-2d-comparison}
-    \end{figure}
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/wrong_sampling.pdf}
+        \subcaption{Original Sampling Algorithm}
+        \label{fig:loc-sampling-2d-original}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[c]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/right_sampling.pdf}
+        \subcaption{Improved Sampling Algorithm}
+        \label{fig:loc-sampling-2d-improved}
+    \end{subfigure}
+    \caption{Comparing the observed distribution of sampled neutron incident locations across the face of a cylindrical target from original SESH algorithm versus the new implementation}
+    \label{fig:loc-sampling-2d-comparison}
+\end{figure}
+    
     Not only was this a headache to deal with, but the non-uniform distribution had the potential to under-estimate the correction factor. Neutrons sampled as interacting closer to the edges are less likely to experience significant multiple scattering events.
 
     \begin{figure}[h]
         \centering
-        \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/sampling_1d_comparison.png}
+        \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/sampling_1d.pdf}
         \caption{Comparison between improved and original algorithm regards to sampled radius}
         \label{fig:sampling-1d-comparison}
     \end{figure}
@@ -434,14 +445,14 @@ A consistent feature visible in the relative error panels of \autoref{fig:cc-ext
 
     \begin{subfigure}{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{Capture Yield/Figures/rms_vs_eta_t2_r80.png}
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/delta_vs_eta_including_eta1_t2_r80.pdf}
         \caption{$t=2~\mathrm{mm}$, $R=80~\mathrm{mm}$}
         \label{fig:rms_eta_t2_r80}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{Capture Yield/Figures/rms_vs_eta_t6_r80.png}
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/delta_vs_eta_including_eta1_t6_r80.pdf}
         \caption{$t=6~\mathrm{mm}$, $R=80~\mathrm{mm}$}
         \label{fig:rms_eta_t6_r80}
     \end{subfigure}
@@ -450,14 +461,14 @@ A consistent feature visible in the relative error panels of \autoref{fig:cc-ext
 
     \begin{subfigure}{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{Capture Yield/Figures/rms_vs_eta_t8_r80.png}
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/delta_vs_eta_including_eta1_t8_r80.pdf}
         \caption{$t=8~\mathrm{mm}$, $R=80~\mathrm{mm}$}
         \label{fig:rms_eta_t8_r80}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{Capture Yield/Figures/rms_vs_eta_t8_r20.png}
+        \includegraphics[width=\textwidth]{Capture Yield/Figures/delta_vs_eta_including_eta1_t8_r20.pdf}
         \caption{$t=8~\mathrm{mm}$, $R=20~\mathrm{mm}$}
         \label{fig:rms_eta_t8_r20}
     \end{subfigure}
