@@ -18,7 +18,7 @@ Once new parameters were obtained, they were used to calculate a new correction 
 The implementation described in the following sections integrates the self-shielding correction capabilities of SESH directly into SAMMY’s fitting engine. This creates a new, streamlined workflow where the evaluator provides the actual measurement data—such as average transmission or capture yield—directly to the code. SAMMY now internally calculates the necessary self-shielding correction factors during each iteration, directly comparing the theoretical values to the experimental observable. The new and improved workflow is shown in \autoref{fig:current-workflow}.
 \begin{figure}[h]
     \centering
-    \includegraphics[width=1\linewidth]{Implementation/Figures/improved-workflow.png}
+    \includegraphics[width=1\linewidth]{Implementation/Figures/ImprovedWorkflow.pdf}
     \caption{Current SAMMY workflow for processing self-shielded URR data}
     \label{fig:current-workflow}
 \end{figure}
