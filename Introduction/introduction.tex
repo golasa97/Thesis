@@ -1,41 +1,56 @@
 \section{Objective}
-    The goal of this research project was to enable the determination of resonance parameters for the unresolved resonance region (URR) directly from self-shielded measurements. To accomplish this, this project involved the verification and validation of the self-shielding code SESH\cite{sesh}, which was then integrated into the nuclear resonance parameter fitting code SAMMY\cite{sammy}.
+    This research project had two primary objectives. The first was to enable the determination of resonance parameters for the unresolved resonance region (URR) directly from self-shielded measurements. To accomplish this, the self-shielding code SESH\cite{sesh} was verified, validated, and integrated into the nuclear resonance parameter fitting code SAMMY\cite{sammy}, along with the development of a multi-isotope fitting capability not previously available in SAMMY's URR interface.
+
+    The second objective was to apply these newly developed tools to produce a new evaluation of the URR for $^{90}$Zr and $^{91}$Zr. This evaluation leveraged both historical and newly available experimental data, including measurements on both enriched and natural zirconium samples, to improve the determination of average resonance parameters for these isotopes.
 
 
 \section{Problem Description}
 
-    In nuclear engineering, the cross section can essentially be broken up into three regions: the resolved resonance region, the unresolved resonance region, and the fast region. The resolved resonance region is where nuclear resonances can be resolved experimentally. The fast region is where we have a smooth cross section. The unresolved resonance region is where resonances are too closely spaced to be resolved experimentally, leading to overlapping resonances that are observed as a continuous, fluctuating structure. This underlying resonant structure in the URR is accounted for in neutron transport codes by the use of probability tables. These probability tables are essentially a histogram of different possible cross section values for any given energy. The histograms which make up these probability tables are populated by simulating cross section resonances in the URR based on average resonance parameters and the parameters' known statistical distributions. NJOY\cite{njoy} is one such code that is responsible for generating these histograms from average resonance parameters. Accounting for resonant structure is essential for correctly modeling critical systems.
+    In nuclear engineering, the neutron cross section can be divided into four energy regions: the thermal region, the resolved resonance region (RRR), the unresolved resonance region (URR), and the fast region. In the thermal region, cross sections generally follow a $1/v$ dependence and are well characterized. The resolved resonance region is where individual nuclear resonances can be experimentally resolved. The fast region is where the cross section is smooth. The unresolved resonance region is where resonances are too closely spaced to be resolved experimentally, leading to overlapping resonances that are observed as a continuous, fluctuating structure. This underlying resonance structure in the URR is accounted for in neutron transport codes by the use of probability tables. These probability tables are essentially a histogram of different possible cross section values for any given energy. The histograms which make up these probability tables are populated by simulating cross section resonances in the URR based on average resonance parameters and the parameters' known statistical distributions. NJOY\cite{njoy} is one such code that is responsible for generating these histograms from average resonance parameters. Accounting for resonance structure is essential for correctly modeling critical systems.
 
 
 
 
 
-    Consider the IMF-10 Criticality Benchmark\cite{icsbep}, which is a 9\% enriched cylindrical system with a depleted uranium reflector. This was modeled in MCNP using cross sections generated from the ENDF-VIII.0 nuclear data library\cite{endf-8} and processed with NJOY. In order to show the effect of the URR resonant structure, the benchmark was run once with the probability tables enabled and once with the probability tables disabled.
+    Consider the IMF-10 Criticality Benchmark\cite{icsbep}, which is a 9\% enriched uranium cylindrical system with a depleted uranium reflector. Because uranium isotopes, particularly $^{238}$U, have a significant unresolved resonance region, this benchmark provides a clear demonstration of the importance of accounting for URR self-shielding in reactor calculations. This benchmark was modeled in the Monte Carlo neutron transport code MCNP\cite{mcnp} using cross sections generated from the ENDF/B-VIII.0 nuclear data library\cite{endf-8} and processed with NJOY. When probability tables are enabled, MCNP samples cross-section values at each collision in the URR from a probability table that captures the statistical distribution of cross sections due to unresolved resonance fluctuations. These probability tables are generated by NJOY from the average resonance parameters stored in the evaluated nuclear data file. When probability tables are disabled, MCNP instead uses only the smooth, energy-averaged cross section in the URR, which neglects the effect of resonance fluctuations entirely. To demonstrate the impact of this distinction, the benchmark was run with probability tables both enabled and disabled.
 
     \begin{table}[h!]
         \centering
-        \caption{Impact of the URR on the ZPR-U9 Criticality Benchmark.}
-        \begin{tabular}{|l  c  c|}
+        \caption{Impact of the URR on the IMF-10 Criticality Benchmark.}
+        \begin{tabular}{|c  c  c|}
             \hline
-            ~                       &   $k_{eff}$   & $\Delta \rho$ (pcm) \\
+            $k_{\text{eff}}$ (P-Tables On) & $k_{\text{eff}}$ (P-Tables Off) & $\Delta k$ (pcm) \\
             \hline
-            URR P-Tables Enabled    &   $1.00274$   & $0$ \\
-            URR P-Tables Disabled   &   $0.99806$   &   $-467$ \\
+            $1.00274$ & $0.99806$ & $-468$ \\
             \hline
         \end{tabular}
         \label{tab:criticality-benchmark}
     \end{table}
     
-    The results are given in \autoref{tab:criticality-benchmark}. In this example, the effect of accounting for URR fluctuations compared to not accounting for URR fluctuations reduced the reactivity of the system by 467 pcm. This phenomenon is known as resonance self-shielding, which can be defined as the flux depression caused by strong resonances. This results in a reduction of the effective reaction rate, and therefore a reduction in the system's criticality.
+    The results are given in \autoref{tab:criticality-benchmark}. Enabling the probability tables, which account for URR resonance fluctuations, resulted in a $\Delta k$ of approximately 468~pcm relative to the case where these fluctuations were neglected. This phenomenon is known as resonance self-shielding, which can be defined as the flux depression caused by strong resonances. This results in a reduction of the effective reaction rate, and therefore a reduction in the system's criticality.
 
-    While accounting for resonant fluctuations in the URR is straightforward once accurate average resonance parameters are determined, self-shielding is still going to be encountered when taking measurements in the URR. Essentially, due to the non-linearity of the cross section and the functional form of the measurements of said cross section, the average measured quantity is not equal to the measurement of the average cross section. Put more concretely, this non-equivalence can be stated as the average value of a transmission measurement is not equal to the transmission of the average cross section, or
+    Accurate reactor calculations therefore require accurate average resonance parameters in the URR. These parameters are ultimately determined from experimental measurements, principally neutron transmission and capture yield experiments. In a transmission experiment, a beam of neutrons passes through a sample of material, and the fraction of neutrons that pass through without interacting is measured as a function of energy. The transmission is related to the total cross section via $T(E) = e^{-n\sigma(E)}$, where $n$ is the atomic thickness of the sample in atoms/barn. In practice, the energy resolution of the measurement is limited, meaning that the detector integrates over a finite energy bin. When this energy bin is wider than the spacing between individual resonances---as is inherently the case in the URR---the measured transmission represents an average over many resonance fluctuations within that bin. The key difficulty arises because the relationship between transmission and cross section is non-linear: the average of $e^{-n\sigma(E)}$ over an energy bin is not the same as $e^{-n\langle\sigma\rangle}$, where $\langle\sigma\rangle$ is the average cross section over that bin. This effect is known as resonance self-shielding, and it must be properly accounted for when extracting average resonance parameters from experimental data.
+
+    Formally, this non-equivalence is stated as
     \begin{equation}
         \label{eq:self-shielding}
         \langle T (\sigma) \rangle \neq T(\langle \sigma \rangle)
     \end{equation}
     in which $\langle \cdot \rangle$ represents a quantity averaged over some energy region.
     
-    This issue is shown in \autoref{fig:self-shielding-demo}, using \textsuperscript{181}Ta as an example. Here, the transmission of a 0.105 at/barn thick sample is simulated in three ways. First, in which the $\sigma(E)$ was finely resolved, such that a true $T(E)$ was obtained. Second, in which the transmission is obtained as an energy-averaged quantity, $\langle T \rangle$. Finally, the energy-average of the known cross section $\langle \sigma \rangle$ was obtained over the same energy region and the ``transmission of the average cross section'' was calculated, $e^{-n \langle \sigma \rangle}$. The two average quantities, $\langle T\rangle$ and $e^{-n \langle \sigma \rangle}$, not being equal is exactly what prevents the use of a nuclear fitting code like SAMMY\cite{sammy} to be used with URR measurements that have not accounted for self-shielding.
+    This effect is illustrated in \autoref{fig:self-shielding-demo}, using \textsuperscript{181}Ta as an example. Consider a hypothetical single energy bin spanning from 2.2 to 2.38~keV, over which a transmission measurement is made on a sample with an atomic thickness of $n = 0.105$~atoms/barn. In reality, an experimenter measuring transmission in this energy bin would observe the average transmission
+    \begin{equation}
+        \label{eq:avg-transmission-def}
+        \langle T \rangle = \frac{1}{\Delta E} \int_{\Delta E} e^{-n\sigma(E)}\, dE
+    \end{equation}
+    where $\Delta E = E_2 - E_1$ is the width of the energy bin and $\sigma(E)$ is the true energy-dependent cross section. This quantity is shown as the green line in \autoref{fig:self-shielding-demo}. Also shown is the finely resolved transmission $T(E) = e^{-n\sigma(E)}$ (blue line), which represents the transmission that would be observed if the energy resolution were infinitely fine; this quantity is not directly measurable in the URR, but is useful for illustration. Finally, the orange line shows $e^{-n\langle\sigma\rangle}$, the transmission calculated from the average cross section over the bin.
+    
+    It should be noted that in a real experiment, the measured average transmission also depends on the energy distribution of the incident neutron flux, $\phi(E)$, within the bin:
+    \begin{equation}
+        \label{eq:flux-weighted-transmission}
+        \langle T \rangle_{\text{meas}} = \frac{\int_{\Delta E} \phi(E)\, e^{-n\sigma(E)}\, dE}{\int_{\Delta E} \phi(E)\, dE}
+    \end{equation}
+    For the purposes of this illustration, a uniform flux within the bin is assumed.
 
     \begin{figure}
         \centering
@@ -44,11 +59,13 @@
         \label{fig:self-shielding-demo}
     \end{figure}
 
-    To summarize, three facts are true:
+    The central observation from \autoref{fig:self-shielding-demo} is that $\langle T \rangle > e^{-n\langle\sigma\rangle}$: the average transmission is always greater than the transmission of the average cross section. This discrepancy is the self-shielding effect, and it is what prevents a fitting code like SAMMY\cite{sammy} from being used directly with URR measurements without a correction for self-shielding.
+
+    To summarize, the problem can be stated as follows:
     \begin{enumerate}
-        \item The resonant structure in the URR cannot be ignored in modeling critical systems.
-        \item Modeling the resonant structure in the URR requires accurate resonance parameters.
-        \item URR parameters cannot be directly determined from transmission and capture experiments due to self-shielding.
+        \item The resonance structure in the URR cannot be ignored in modeling critical systems.
+        \item Modeling the resonance structure in the URR requires accurate average resonance parameters.
+        \item These parameters are extracted from transmission and capture experiments, which are subject to self-shielding in the URR.
     \end{enumerate}
 
     Therefore, a problem remains: how can an average measurement be expressed as a function of the average cross section? It wouldn't be sufficient to fit resonance parameters using the ``uncorrected'' cross-section, i.e.,
@@ -69,6 +86,6 @@
         \label{eq:self-shielded-transmission}
         \langle T \rangle = e^{-n \langle \sigma \rangle} C_T
     \end{equation}
-    This `transmission correction factor', $C_T$, corrects for the self-shielding effect produced by the resonant fluctuations in the URR.
+    This `transmission correction factor', $C_T$, corrects for the self-shielding effect produced by the resonance fluctuations in the URR.
 
     This project integrated self-shielding correction factors directly into SAMMY, enabling the code to fit self-shielded URR transmission and capture yield measurements. Additionally, the capability to fit multiple isotope samples, such as self-shielded transmission and capture measurements of natural samples, was introduced: a feature not previously available in SAMMY's URR fitting. This new functionality significantly modernized SAMMY's URR fitting interface. This developed package was then applied to a new evaluation of the unresolved resonance region for Zr\textsuperscript{90} and Zr\textsuperscript{91}, utilizing natural datasets to improve the performance of the fit, which had been previously computationally prohibitive and reliant on manual, error-prone methods due to the lack of multi-isotope functionality.

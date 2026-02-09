@@ -1,0 +1,61 @@
+\chapter{Conclusion}
+
+\section{Summary of Achievements}
+
+This dissertation has developed and validated a comprehensive framework for determining resonance parameters from self-shielded measurements in the unresolved resonance region (URR). The work addresses a long-standing challenge in nuclear data evaluation: the inability to directly fit average resonance parameters to experimental transmission and capture yield measurements without applying external, often inconsistent, self-shielding corrections.
+
+The primary achievements of this work are:
+
+\subsection{Integration of Self-Shielding Corrections into SAMMY}
+
+The self-shielding code SESH was substantially rewritten and integrated into the SAMMY nuclear data fitting code, enabling direct fitting of URR parameters to self-shielded measurements. This represents a novel capability for SAMMY: the code can now fit mono-isotopic and multi-isotopic sample transmissions, as well as capture yield measurements, with self-shielding corrections applied dynamically during the optimization. This integration required modernization of SESH's physics models to ensure consistency with SAMMY's URR formulation, correction of historical bugs in Doppler broadening and sampling routines, and development of numerical methods for computing correction factor derivatives.
+
+The validation against MCNP benchmarks demonstrated agreement within 1\% for transmission correction factors when the correction factor $C_T$ remains below 1.5. This threshold corresponds to moderately self-shielded samples and encompasses the majority of practical experimental configurations.
+
+\subsection{Extension to Multi-Isotope Systems}
+
+A significant portion of the development effort was dedicated to extending the self-shielding correction methodology to handle samples containing multiple isotopes. This required a complete refactoring of the legacy FORTRAN codebase to accommodate dynamic memory allocation and variable isotope compositions. The multi-isotope capability was validated against MCNP simulations of natural zirconium, revealing an important finding: the probability table methodology used by transport codes introduces variance scaling artifacts when the sampled and evaluated mean cross sections differ significantly.
+
+\subsection{Development of Capture Yield Correction}
+
+The capture yield correction model was implemented and validated, enabling fitting of capture yield measurements in the URR. The model accounts for both resonance self-shielding and multiple scattering effects within cylindrical samples. The validation demonstrated agreement with MCNP within 0.5\% for typical experimental geometries, with deviations up to 2 to 3\% observed only for pathological configurations (very thick samples with small radii) that fall outside normal experimental practice.
+
+\subsection{Quantification of Self-Shielding Model Uncertainty}
+
+A novel methodology was developed for quantifying the model uncertainty arising from finite resonance sampling effects. This addresses a critical gap in URR evaluation practice: the conventionally computed statistical uncertainties are unrealistically small because they neglect the inherent uncertainty in the self-shielding correction. The Monte Carlo approach developed here propagates resonance parameter statistics through the correction factor calculation, providing physically meaningful uncertainty estimates that scale appropriately with sample thickness and energy bin width.
+
+The analysis demonstrated that for heavily self-shielded measurements, the model uncertainty can exceed the experimental statistical uncertainty, making it a dominant component of the total uncertainty budget that cannot be ignored.
+
+\subsection{Demonstration through Zr-90 and Zr-91 Evaluation}
+
+The developed methodology was applied to a practical evaluation of $^{90}$Zr and $^{91}$Zr in the unresolved resonance region. This evaluation demonstrated several novel aspects: direct fitting of transmission measurements without pre-applied corrections, explicit modeling of intermediate structure through doorway state contributions, simultaneous fitting of multiple datasets with different parameter sensitivities, and propagation of self-shielding model uncertainty into final parameter covariances.
+
+The evaluation revealed that current ENDF/B-VIII.1 evaluations contain artifacts from natural zirconium data processing and fail to capture the doorway state contributions that produce cross-section enhancements of 5 to 10\% in the 0.8 to 1.0~MeV region for $^{90}$Zr. The new evaluation provides physically consistent parameters for both isotopes that reproduce the experimental observables within their uncertainties.
+
+\section{Implications for Nuclear Data Evaluation}
+
+The tools and methodologies developed in this work have several important implications for the broader nuclear data evaluation community, namely for evaluators, experimentalists, and transport code users.
+
+The integrated SAMMY/SESH framework provides evaluators with a more rigorous approach to URR evaluation by eliminating the iterative, manual correction workflow previously required. Evaluators can now work directly in measurement space, fitting calculated transmissions to experimental transmissions, which ensures self-consistency and proper uncertainty propagation.
+
+Beyond evaluation methodology, the quantification of self-shielding model uncertainty provides experimentalists with guidance on experimental design. The relationship between bin width, sample thickness, and model uncertainty can now be calculated \textit{a priori}, allowing optimization of experimental parameters to achieve target uncertainty levels.
+
+Finally, the identification of variance scaling artifacts in probability table methodologies has implications for transport code users performing simulations involving nuclides with significant smooth cross-section contributions from doorway states or direct reactions. Until variance-preserving corrections are implemented in processing codes, users should be aware of potential self-shielding biases in such cases.
+
+\section{Limitations and Future Work}
+
+Several limitations of the current work have been identified and provide directions for future research.
+
+The most significant limitation concerns uncertainty quantification completeness. The reported parameter uncertainties likely underestimate the true uncertainties because they do not include systematic uncertainties in experimental normalization, doorway state parameter uncertainties, or model form uncertainties. A comprehensive uncertainty budget incorporating these additional sources would substantially increase the reported uncertainties. Future work should develop methods for propagating these additional uncertainty sources through the evaluation workflow.
+
+A related limitation involves the treatment of doorway states in the $^{90}$Zr evaluation. While the doorway state model significantly improves agreement with experimental data, the parameters were partially fixed from shell-model calculations rather than fully fitted. Future work should explore simultaneous fitting of doorway and compound nucleus parameters, potentially with interference effects between doorways. Additionally, the current Lorentzian form with energy-independent spreading widths may be insufficient for capturing the detailed structure near doorway peaks.
+
+From the perspective of transport code compatibility, an incompatibility exists between the doorway state contributions (which produce smooth cross-section enhancements) and the probability table methodology (which assumes all cross-section variance comes from resonance sampling). This represents a fundamental limitation in how current ENDF files can be utilized in transport codes. Resolution of this issue will require modifications to nuclear data processing codes and potentially to the ENDF format itself. The variance-preserving transformation proposed in the companion publication provides a path forward, but adoption requires coordination across the nuclear data community.
+
+Finally, experimental gaps remain that limit the quality of the current evaluation. The complete absence of capture cross-section measurements for $^{90}$Zr within its defined URR (0.8 to 1.78~MeV) means that the capture cross section is constrained only by extrapolation. New capture measurements in this energy range would substantially improve the evaluation. Similarly, measurements on enriched samples for the other stable zirconium isotopes ($^{92,94,96}$Zr) would enable a comprehensive re-evaluation of the entire zirconium isotopic chain.
+
+\section{Concluding Remarks}
+
+The framework developed in this dissertation transforms URR evaluation from an iterative, correction-based approach to a direct measurement-space fitting methodology. By integrating self-shielding corrections directly into the fitting engine, the work eliminates sources of inconsistency and enables proper propagation of model uncertainties. The successful application to the challenging case of zirconium isotopes, including explicit treatment of intermediate structure, demonstrates that the methodology is practical for production evaluations.
+
+The tools developed here are immediately applicable to other nuclides requiring URR evaluation, particularly those where thick-sample transmission data exist but have been underutilized due to self-shielding concerns. The methodology also provides a foundation for future improvements in URR evaluation practice, including more sophisticated intermediate structure models and comprehensive uncertainty quantification.
