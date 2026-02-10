@@ -39,46 +39,95 @@ The MCNP model was configured to simulate neutron transmission through a $^{181}
 \end{equation}
 This provides an ideal reference value, free from the statistical approximations inherent to the SESH methodology, against which SESH's calculations can be validated.
 
+\subsection{Monte Carlo Convergence}
+\label{ssec:mc-convergence}
+
+The preceding subsections validated the accuracy of the SESH correction factor against an MCNP benchmark, but the Monte Carlo procedure introduces a separate concern: statistical precision. Because $C_T$ is estimated from a finite sample of resonance ladder realizations, each evaluation carries a random fluctuation whose magnitude depends on both the number of histories $N$ and the physical conditions of the calculation. In a standalone comparison to data this fluctuation simply widens the scatter in the theoretical prediction. In the context of iterative fitting, however, an imprecise $C_T$ corrupts the derivative information used by the Bayesian update, causing the fit to oscillate around the minimum rather than converge smoothly.
+
+To characterize the convergence behavior, the correction factor was computed for a 4~mm $^{181}$Ta sample at 300~K using four external resonance pairs at three representative energies spanning the URR: 5~keV, where self-shielding is strongest ($C_T \approx 1.043$); 20~keV, where the correction is moderate ($C_T \approx 1.006$); and 80~keV, where it is negligible ($C_T \approx 1.0005$). At each energy, the number of Monte Carlo histories was varied from $N = 25$ to $N = 100{,}000$, with 30 independent trials performed at each value of $N$ to estimate the standard deviation of the $C_T$ estimator.
+
+\autoref{fig:ct-convergence-means} shows convergence of the computed correction factor as a function of $N$ at each energy. The mean value is stable across all $N$, confirming that the Monte Carlo estimator is unbiased. The error bars contract monotonically with increasing $N$, and the effect is most pronounced at 5~keV where the cross-section fluctuations are largest. At 80~keV, where the level density is high and individual resonances overlap strongly, even $N = 25$ histories produce a correction factor that is effectively converged.
+
+The convergence rate is quantified more precisely in \autoref{fig:ct-convergence-precision}, which plots the relative standard deviation of $C_T$ against $N$. All three energies follow the expected $1/\sqrt{N}$ scaling of a Monte Carlo estimator, confirming that the variance arises from the stochastic sampling of resonance ladders and not from any systematic instability in the algorithm. The vertical separation between the curves reflects the magnitude of the self-shielding correction: larger corrections produce wider cross-section distributions, which require more histories to average precisely.
+
+For the purpose of evaluating resonance parameters, the precision requirement on $C_T$ is more stringent than might be suggested by the correction factor alone. During fitting, SAMMY updates the average resonance parameters iteratively, with each step relying on the partial derivatives of the theoretical transmission with respect to the fitted quantities. When $C_T$ carries excessive statistical noise, these derivatives are contaminated, and the fit oscillates near the minimum rather than converging to it. In practice, this manifests as a final $\chi^2$ that fluctuates between iterations without settling, particularly for the strength functions whose effect on $C_T$ is small but physically meaningful. Empirically, stable convergence of the fitting procedure requires the relative precision on $C_T$ to be well below the sensitivity of the transmission to a single parameter step, which for typical URR evaluations corresponds to a relative standard deviation on the order of 0.1\% or better.
+
+From \autoref{fig:ct-convergence-precision}, this threshold is reached at approximately $N = 50{,}000$ for the most heavily self-shielded case at 5~keV, where the relative standard deviation falls to 0.07\%. At 20~keV the same precision is achieved near $N = 10{,}000$, and at 80~keV it is reached with only a few hundred histories. In general, the required number of histories scales with the magnitude of the self-shielding correction: thicker samples of isotopes with wider resonance-width distributions and lower level densities will require more histories to achieve the same statistical precision. For the evaluations presented in \autoref{chap:evaluation}, $N = 50{,}000$ histories were used at all energies to ensure that the Monte Carlo noise in $C_T$ does not limit the fitting precision.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Transmission Correction/Figures/ct_convergence_means.pdf}
+    \caption{Convergence of the transmission correction factor for a 4~mm $^{181}$Ta sample at 300~K at three representative URR energies. Each point is the mean of 30 independent calculations; error bars show $\pm 1\sigma$. The dashed lines indicate the converged value at $N = 100{,}000$. The mean is unbiased at all $N$; only the statistical spread decreases with increasing history count.}
+    \label{fig:ct-convergence-means}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Transmission Correction/Figures/ct_convergence_precision.pdf}
+    \caption{Relative standard deviation of the correction factor as a function of the number of Monte Carlo histories. The dashed line shows the expected $1/\sqrt{N}$ scaling. At 5~keV, where self-shielding is strongest, approximately $50{,}000$ histories are needed to reduce the relative uncertainty below 0.1\%. At higher energies where the correction is smaller, fewer histories suffice.}
+    \label{fig:ct-convergence-precision}
+\end{figure}
+
 \subsection{Influence of External Resonance Pairs}
-The SESH code includes a feature to add resonance pairs at energies outside of the specific energy bin being analyzed. This is intended to account for the contributions from the tails of distant resonances, which can still influence the cross section within the bin. To quantify the impact of this feature, the correction factor was calculated for a 4~mm $^{181}$Ta sample at 300~K using an increasing number of external resonance pairs.
+\label{ssec:resonance-pairs}
 
-The results, shown in \autoref{fig:tc-resonance-pairs}, demonstrate that the inclusion of external resonance pairs has a slight but noticeable influence on the calculated correction factor. As more pairs are added, the SESH calculation converges toward the MCNP benchmark value. \autoref{fig:tc-resonance-pairs-error} shows the relative error between SESH and MCNP, confirming that using more resonance pairs produces more accurate results. For the remainder of this work, four external resonance pairs were used in all SESH calculations to ensure a balance between accuracy and computational efficiency.
+The Monte Carlo procedure in SESH constructs a set of resonance ladders within each energy bin by sampling level spacings and widths from their respective statistical distributions. In practice, the cross section at any point within the bin is not determined solely by the resonances inside it --- the tails of nearby resonances outside the bin also contribute. The question is how many of these external resonances need to be included to produce a statistically representative sample of the cross-section fluctuations.
 
- \begin{figure}[H]
-     \centering
-     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ResonancePairInfluenceOnCT.png}
-     \caption{Comparison of the transmission correction factor for a 4~mm $^{181}$Ta sample at 300~K, calculated with SESH using a varying number of external resonance pairs and compared to the MCNP benchmark.}
-     \label{fig:tc-resonance-pairs}
- \end{figure}
+When resonance widths are much larger than the mean level spacing ($\Gamma \gg D$), the cross section at a given energy is the incoherent sum of many overlapping resonance contributions, and the fine details of any individual resonance placement become unimportant\cite{ERICSON1963390}. In this regime, even a modest number of external resonances captures the essential behavior. However, $\Gamma/D$ is not uniformly large across the URR. At lower energies where level densities are smaller and resonances are more isolated, the cross section within a bin can be sensitive to whether a particular external resonance happens to sit just outside the bin edge. Monahan and Elwyn\cite{MONAHAN1967683} showed that fluctuations in the averaged compound cross section depend on both the width and spacing distributions, meaning that truncating the resonance ladder too aggressively can bias the sampled cross-section distribution and, in turn, the correction factor.
 
- \begin{figure}[H]
-     \centering
-     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ResonancePairError.png}
-     \caption{Relative error between SESH and MCNP for varying the total number of external resonances.}
-     \label{fig:tc-resonance-pairs-error}
- \end{figure}
+The SESH code addresses this by allowing the user to specify a number of external resonance pairs: resonances placed above and below the bin boundaries spaced by sampling from the Wigner Distribution\cite{Wigner1951}. Adding more pairs extends the sampled ladder further from the bin edges, ensuring that the tails of distant resonances are properly included in the cross-section calculation. To quantify the impact of this setting, the correction factor was calculated for a 4~mm $^{181}$Ta sample at 300~K using one through four external resonance pairs.
+
+The results, shown in \autoref{fig:tc-resonance-pairs}, demonstrate that the inclusion of external resonance pairs has a slight but noticeable influence on the calculated correction factor. As more pairs are added, the SESH calculation converges toward the MCNP benchmark value, with the relative error decreasing correspondingly. The effect is most visible at lower energies where the resonances are less overlapping and the bin-edge truncation matters more. By four external pairs the improvement saturates, and additional pairs produce no further change within the statistical precision of the calculation. For the remainder of this work, four external resonance pairs were used in all SESH calculations.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Transmission Correction/Figures/ResonancePairInfluenceOnCT.png}
+        \caption{Correction factor comparison}
+        \label{fig:tc-resonance-pairs-data}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Transmission Correction/Figures/ResonancePairError.png}
+        \caption{Relative error}
+        \label{fig:tc-resonance-pairs-error}
+    \end{subfigure}
+    \caption{Transmission correction factor for a 4~mm $^{181}$Ta sample at 300~K as a function of the number of external resonance pairs. (a) SESH calculations compared to the MCNP benchmark. (b) Relative error between SESH and MCNP.}
+    \label{fig:tc-resonance-pairs}
+\end{figure}
 
 
-\subsection{Verification of Sample Thickness Dependence}
-In the $^{181}$Ta study presented here, agreement is strongest for the thinner cases (2--4~mm), while larger differences appear in the thickest cases (8--12~mm) where $C_T$ becomes large. As a practical guideline, designs that keep $C_T \leq 1.5$ avoid the edge of applicability observed in this benchmark.
+\subsection{Sample Thickness Dependence}
+\label{ssec:thickness}
 
-A critical parameter in self-shielding experiments is the thickness of the sample\cite{Dresner1960}. To determine the range of applicability for SESH, various thicknesses of $^{181}$Ta were simulated, specifically 2~mm, 4~mm, 8~mm, and 12~mm. The correction factors calculated by SESH were then compared against the MCNP benchmark for each thickness.
+Of the parameters investigated in this chapter, the sample thickness exerts the strongest influence on the transmission correction factor. This sensitivity follows directly from the physics of self-shielding: a thicker sample amplifies the nonlinear relationship between the cross-section fluctuations and the transmitted intensity. As presented in \autoref{eq:taylor-series-expansion},  the correction factor depends on the cross-section variance as $C_T \approx 1 + \frac{1}{2}n^2 \mathrm{Var}(\sigma)$, where $n$ is the sample thickness in atoms per barn. For thin samples the quadratic term is small and $C_T$ remains close to unity. But as $n$ increases the correction grows rapidly and the shape of the cross-section distribution become increasingly important.
 
-As shown in \autoref{fig:tc-thickness} and \autoref{fig:tc-thickness-error}, there is very strong agreement between SESH and MCNP for the thinner samples. However, as the sample thickness increases, SESH begins to under-predict the correction factor. This deviation becomes more pronounced for thicker samples, particularly where the correction factor $C_T$ exceeds a value of 1.5. This analysis suggests that to maintain a disagreement of less than 1\%, the use of this method should be limited to samples where the calculated correction factor remains below this threshold.
+To characterize this behavior and determine the range of applicability for SESH, the correction factor was computed for 2~mm, 4~mm, 8~mm, and 12~mm samples of $^{181}$Ta at 300~K and compared against the MCNP benchmark. The results, shown in \autoref{fig:tc-thickness}, reveal two distinct regimes. For the thinner samples (2--4~mm), the agreement between SESH and MCNP is excellent, with relative errors below 0.1\%. For the thicker samples (8--12~mm), a systematic discrepancy emerges in which SESH predicts a larger correction factor than MCNP, with the disagreement growing as $C_T$ increases beyond approximately 1.5.
 
- \begin{figure}[H]
-     \centering
-     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ct-verification.png}
-     \caption{Comparison of the transmission correction factor calculated with SESH and MCNP for various thicknesses of a $^{181}$Ta sample.}
-     \label{fig:tc-thickness}
- \end{figure}
+This discrepancy initially appears to suggest a limitation of the SESH methodology at large thicknesses. However, the source of the disagreement is not in SESH's Monte Carlo sampling, but rather in the way the MCNP benchmark handles cross-section fluctuations in the URR. MCNP represents the URR cross-section distribution through probability tables, which are pre-generated discrete approximations to the continuous distribution sampled by SESH. When the probability table mean differs from the pointwise cross section used in transport, the standard mean-enforcement procedure (the LSSF=1 method) rescales the entire distribution multiplicatively, which inadvertently alters the variance of the cross-section distribution. Because the self-shielding effect depends directly on this variance, the rescaled probability tables systematically underpredict the correction factor, and the underprediction grows with sample thickness as the transmission becomes more sensitive to the tails of the distribution. A detailed analysis of this probability table variance conservation issue, including its isolation through controlled numerical experiments, is presented in \autoref{chap:multi-isotope}.
 
- \begin{figure}[H]
-     \centering
-     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ct-verification-err.png}
-     \caption{Relative error between SESH and MCNP for simulations of various thicknesses.}
-     \label{fig:tc-thickness-error}
- \end{figure}
+For the purposes of this chapter, the key conclusion is that the observed discrepancy at large thicknesses does not indicate an error in the SESH calculation. Rather, it reflects a known limitation of the MCNP probability table methodology that becomes visible precisely when self-shielding is strong. The SESH results, which sample directly from the resonance parameter distributions without the intermediate probability table discretization, are expected to be the more accurate representation in this regime. As a practical guideline for users of the current MCNP-based benchmarking approach, experimental designs that keep $C_T \leq 1.5$ remain in the regime where the two methods agree and the MCNP benchmark can be used with confidence.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Transmission Correction/Figures/ct-verification.png}
+        \caption{Correction factor comparison}
+        \label{fig:tc-thickness-data}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Transmission Correction/Figures/ct-verification-err.png}
+        \caption{Relative error}
+        \label{fig:tc-thickness-error}
+    \end{subfigure}
+    \caption{Transmission correction factor for various thicknesses of a $^{181}$Ta sample at 300~K. (a) SESH calculations compared to the MCNP benchmark. (b) Relative error between SESH and MCNP, showing increasing deviation for thicker samples where $C_T$ exceeds 1.5.}
+    \label{fig:tc-thickness}
+\end{figure}
 
 
 \subsection{Verification of Sample Temperature Dependence}
