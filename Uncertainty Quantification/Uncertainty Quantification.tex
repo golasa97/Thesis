@@ -1,130 +1,136 @@
 
-\section{Uncertainty Quantification in the URR}
+This chapter addresses a longstanding deficiency in URR evaluations: the determination of realistic parameter uncertainties. The fitting of average resonance parameters to energy-averaged measurements produces statistical uncertainties that are far too small to be physically meaningful, and evaluators have historically resorted to ad hoc inflation of these uncertainties to achieve reasonable agreement with integral benchmarks. This chapter identifies a specific, previously unaccounted-for source of model uncertainty, the finite resonance effect in self-shielding corrections, develops a Monte Carlo method to quantify it, and demonstrates how it can be incorporated into the evaluation procedure to produce more realistic and physically defensible parameter uncertainties.
 
-A significant challenge in the evaluation of URR parameters is the determination of realistic parameter uncertainties. The requirement to fit average resonance parameters to energy-averaged measurements, which can combine hundreds or thousands of data points, produces exceptionally small statistical uncertainties. If unmodified, these exceptionally small uncertainties will produce unrealistically small parametric uncertainties in an evaluation, and evaluators must artifically increase parametric uncertainties in order to properly reflect accurate theoretical uncertainties in integral and differential benchmarks\cite{rh103}. This practice, while pragmatic, is obviously not ideal and indicates that a significant source of uncertainty is being systematically missed in URR evaluations.
+\section{The Problem of Unrealistic URR Uncertainties}
+\label{sec:uq-problem}
 
-One of the most significant sources of this missing uncertainty is the model uncertainty associated with self-shielding corrections. Currently, there is no established methodology to tackle the uncertainty quantification associated with self-shielding corrections\cite{templates}. The uncertainty associated with the self-shielding correction is attributable to finite resonance sampling effects. This is a consequence of the fact that any energy bin over which data is averaged contains only a finite number of resonances. This limited sample is not necessarily representative of the true, continuous distributions of the Wigner and Porter-Thomas distributions that dictate neutron resonance statistics. The deviation between the true, finite sample of resonance in an energy bin and the ideal distributions introduces a quantifiable uncertainty that has been unaccounted for in previous evaluations.
+A persistent challenge in URR evaluation is the disconnect between the statistical precision of the fit and the physical accuracy of the resulting parameters. Because each data point in a URR fit is itself an average over a wide energy range containing hundreds or thousands of individual resonance contributions, the effective statistical uncertainty on the averaged quantity is extremely small. When these small uncertainties are propagated through a Bayesian fitting procedure\cite{sammy}, the resulting posterior parameter uncertainties are correspondingly small, often unrealistically so. In practice, evaluators must artificially inflate the parametric uncertainties to achieve agreement with integral and differential benchmarks\cite{rh103}. This practice, while pragmatic, is a clear indication that a significant source of uncertainty is being systematically omitted from the evaluation.
 
-The ultimate goal is to propose a method for incorporating this new self-shielding modeling uncertainty component into the evaluation procedure, in order to determine more realistic and physically meaningful uncertainty estimates on the final evaluated parameters. In order to accomplish this, a representative case for $^{181}$Ta will be generated using robust R-Matrix theory, which will then be used to validate that the computationally efficient SLBW equations can accurately reproduce self-shielding uncertainty. These generated uncertainties will be combined with given experimental uncertainties in order to produce parameters with realistic and meaningful uncertainties.
+The problem has been recognized from multiple angles in the literature. Brown et al.\cite{Brown2019} constructed full covariance matrices for $^{181}$Ta transmission measurements by separating uncorrelated (counting) and correlated (systematic) uncertainty components and propagating them through the data reduction process. This approach produces more realistic experimental uncertainties than simple counting statistics, but it addresses only the experimental side of the uncertainty budget; it does not account for model uncertainty in the self-shielding correction applied during the evaluation. Vankov et al.\cite{Vankov1987URRDataUUPu} identified what they termed a ``fluctuation error'' arising from the finite number of resonance levels in an energy group, and treated it as an additional variance component in their covariance-based fitting framework for $^{235}$U, $^{238}$U, and $^{239}$Pu. Their analysis demonstrated that this fluctuation error can dominate in some energy ranges and is not necessarily normally distributed. Rochman et al.\cite{Rochman2013AverageToStatRR} approached the problem from the perspective of stochastic resonance ladder generation, computing cross sections from multiple realizations drawn from Wigner-distributed\cite{Wigner1951} level spacings and Porter-Thomas-distributed\cite{Porter1956} widths and reporting the resulting finite-sample spread as an inherent aleatory uncertainty.
 
+Despite this body of work, no established methodology exists for quantifying and propagating the model uncertainty specifically associated with the self-shielding correction factor\cite{templates}. This is the gap that the present chapter addresses. The self-shielding correction factor $C_T$ depends on the statistical properties of the resonance population within a given energy bin. Because any real energy bin contains only a finite number of resonances, the sampled distribution of cross-section values is an imperfect representation of the true, continuous Porter-Thomas and Wigner distributions\cite{Porter1956,Wigner1951} that govern the underlying resonance statistics. The resulting uncertainty in $C_T$ propagates directly into the fitted parameters but has been absent from the uncertainty budget of previous evaluations.
 
-\section{Self-Shielding Correction Limitations}
-    
-There are two assumptions regarding correcting for self-shielding of an average cross section over some energy range:
-\begin{enumerate}
-    \item There are a statistical number of resonances in an energy bin.
-    \item The energy bin is narrow enough such that any energy dependence can be ignored\cite{wpec-15}.
-\end{enumerate}
-These assumptions can be valid for sufficiently statistical nuclei (i.e., the self-shielding model uncertainty is negligible), but for some cases, both assumptions cannot be met simultaneously.
+\section{The Finite Resonance Effect}
+\label{sec:finite-resonance}
 
-The finite resonance effect is a consequence of imperfect statistical sampling. Any real-world energy-bin contains a finite resonance ladder which represents a single statistical realization from the Porter-Thomas and Wigner distributions with a limited number of resonances. As the energy bin increases in size and the number of sampled resonances increases, the sampled distribution will more closely agree with the theoretical distributions. However, the bin size can only increase so much before violating the energy-independence requirement.
+The self-shielding correction factor relies on two fundamental assumptions\cite{wpec-15}. First, the energy bin over which data is averaged must contain a statistically representative sample of resonances, so that the sampled distribution of cross-section values faithfully represents the underlying Porter-Thomas and Wigner distributions. Second, the energy bin must be narrow enough that the average resonance parameters ($\langle D \rangle$, $S_\ell$, $\langle \Gamma_\gamma \rangle$) can be treated as constant across the bin. For nuclei with small average level spacing, both conditions can be satisfied simultaneously. For nuclei with large level spacing, the two requirements are in direct conflict, and the resulting tension is the origin of the finite resonance effect.
+
+The statistical convergence of sampled resonance parameters as a function of bin size is illustrated in \autoref{fig:ta181-gn0-convergence} for the $s$-wave reduced neutron width of $^{181}$Ta, computed from the resolved resonance parameters of the most recent ENDF/B-VIII.1 evaluation\cite{endf-8.1}. The Porter-Thomas distribution\cite{Porter1956} that governs the reduced neutron widths is strongly right-skewed: most sampled widths are small, but the occasional large width produces a resonance that dominates the local average. A small energy bin may contain only small resonances, significantly underestimating the average reduced width; conversely, the inclusion of a single large resonance in a small bin can drastically overestimate it. As the bin widens and more resonances are included, the sampled average converges toward the true population mean, but convergence requires on the order of hundreds of resonances.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.85\linewidth]{Uncertainty Quantification/Figures/ta181-gn0-convergence.png}
-    \caption{Convergence of the observed average s-wave reduced neutron width $(\Gamma_n^0)$ as sampled bin-size increases for $^{181}$Ta. The sampled average (blue line) approaches the true average (dashed line) as more resonances are included.}
+    \caption{Convergence of the observed average $s$-wave reduced neutron width $\langle\Gamma_n^0\rangle$ as a function of the number of resolved resonances included in the averaging bin for $^{181}$Ta. The sampled average (blue) approaches the true population average (dashed) as more resonances are included, but exhibits large fluctuations at small bin sizes due to the right-skewed Porter-Thomas distribution\cite{Porter1956}.}
     \label{fig:ta181-gn0-convergence}
 \end{figure}
 
-\autoref{fig:ta181-gn0-convergence} illustrates the statistical convergence of sampled resonances as the energy bin increases over the most recent ENDF-8.1 $^{181}$Ta evaluation\cite{endf-8.1}. One important feature is due to the nature of the Porter-Thomas distribution, which heavily skews towards sampling many small resonances, and few large ones. A small, unrepresentative energy bin might only contain small resonances, and significantly underestimate the average reduced width. Conversely, the inclusion of one large resonance in a small energy bin will significantly over estimate the average reduced width.
-
-The average level spacing determines how wide an energy bin has to be in order to ensure convergence. While the relatively large S-wave $\langle \Gamma_n^0\rangle$ in $^{181}$Ta causes large fluctuations in its observed average, this is counteracted by a small average level spacing (4.1 eV). Consequently, a relatively narrow bin size can include hundreds of resonances, ensuring it satisfies both the statistical and energy-independence assumptions.
+For $^{181}$Ta, with an average $s$-wave level spacing of approximately 4.1~eV\cite{atlas}, the conflict between the two assumptions is mild: a relatively narrow energy bin can contain hundreds of resonances, satisfying both the statistical and energy-independence requirements simultaneously. The large fluctuations visible at small bin sizes in \autoref{fig:ta181-gn0-convergence} are largely resolved by a few hundred eV of bin width, well within the range over which the average resonance parameters can be considered constant.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=1.0\linewidth]{Uncertainty Quantification/Figures/zr-xs-binsize-comparisons.png}
-    \caption{Total Cross-Section of $^{90}$Zr, grouped over increasingly coarse energy bins.}
+    \caption{Total cross section of $^{90}$Zr grouped over increasingly coarse energy bins. The top panel (10~keV bins) preserves the underlying resonance and intermediate structure. As the bin width increases to 100~keV and 500~keV, the structure is progressively averaged out, yet the bins remain insufficiently statistical given the large $s$-wave level spacing of approximately 8.6~keV.}
     \label{fig:zr90-xs-binsize-comparisons}
 \end{figure}
 
-In contrast to the well-behaved nature of $^{181}$Ta, nuclides with large average level spacing, such as $^{90}$Zr, present a significant challenge where the two primary assumptions for self-shielding corrections are in direct conflict.  With an average s-wave level spacing of approximately 8.6 keV, achieving the same level of statistical convergence seen in \autoref{fig:ta181-gn0-convergence} would require an energy bin of roughly 1.7 MeV.
+The situation for $^{90}$Zr is starkly different. With an average $s$-wave level spacing of approximately 8.6~keV\cite{GregEvaluationInProgress}, achieving the same level of statistical convergence seen in \autoref{fig:ta181-gn0-convergence} would require an energy bin of roughly 1.7~MeV: far wider than the energy range over which the average resonance parameters can be considered constant, and wide enough to completely obscure the intermediate structure that is a defining feature of $^{90}$Zr's cross section. This conflict is illustrated in \autoref{fig:zr90-xs-binsize-comparisons}, where the bin size is varied over the cross section obtained by Musgrove et al.\cite{musgrove1977neutron90}. The finest binning (10~keV) preserves the resonance structure, but each bin contains at most one or two $s$-wave resonances. Coarser binning approaches statistical adequacy but obliterates the energy-dependent features that are essential to the evaluation discussed in \autoref{chap:evaluation}. For such isotopes, the self-shielding correction uncertainty cannot be eliminated by choosing a wider bin; it must instead be quantified and incorporated into the evaluation.
 
-This conflict is illustrated in \autoref{fig:zr90-xs-binsize-comparisons} for which the bin size is varied over the cross-section obtained by Musgrove, et al\cite{musgrove1977neutron90}. The top panel, with a relatively fine 10 keV binning, displays the underlying resonant structure. As the bin width is increased to 100 keV and 500 keV, this structure is progressively averaged out. Not only does the bin size remain insufficiently statistical, the coarsest grid size obscures important energy-dependent features which are essential to the evaluation that will be discussed in \autoref{chap:evaluation}. This means that for proper uncertainty quantification and parameter fitting for $^{90}$Zr, the self-shielding correction uncertainty must be accounted for.
 
-\section{A Monte Carlo Method for Quantifying the Finite Resonance Effect}
+\section{A Monte Carlo Method for Quantifying Self-Shielding Uncertainty}
+\label{sec:uq-mc-method}
 
-To properly quantify the model uncertainty arising from the finite resonance effect, a computational method based on stochastic sampling was developed. The fundamental goal is to simulate the inherent statistical nature of the unresolved resonance region (URR) to determine the variance of the self-shielding correction factor, $C_T$, for a given energy bin and sample thickness. This is achieved by generating thousands of statistically equivalent, physically plausible resonance ladders and observing the resulting distribution of the calculated transmission.
+To quantify the model uncertainty arising from the finite resonance effect, a computational method based on stochastic resonance ladder sampling was developed. The goal is to determine the variance of the self-shielding correction factor $C_T$ for a given energy bin, set of average resonance parameters, and sample thickness. This is achieved by generating thousands of statistically equivalent, physically plausible resonance ladders and observing the resulting distribution of the calculated transmission.
 
-The simulation process follows a sequence of discrete steps for each realization $k$:
+The simulation proceeds through the following steps for each realization $k$:
 
 \begin{enumerate}
-    \item The process begins by generating a unique resonance ladder based on a set of energy-dependent average resonance parameters ($\langle D \rangle$, $\langle \Gamma_n^0 \rangle$, etc.). For each realization, individual resonance energies ($E_r$) are sampled from a Wigner distribution, and their corresponding reduced neutron widths ($\Gamma_n^0$) are sampled from a Porter-Thomas distribution. This creates a unique, stochastic, but physically plausible set of resonances that is consistent with the governing nuclear statistics.
+    \item A unique resonance ladder is generated from the energy-dependent average resonance parameters ($\langle D \rangle$, $\langle \Gamma_n^0 \rangle$, $\langle \Gamma_\gamma \rangle$, etc.). Individual resonance energies are sampled from a Wigner distribution\cite{Wigner1951}, and the corresponding reduced neutron widths are sampled from a Porter-Thomas distribution\cite{Porter1956}. Each realization produces a unique, stochastic set of resonances that is consistent with the governing nuclear statistics but differs in the specific resonance positions and widths.
 
-    \item Each generated resonance ladder is then used to calculate a high-fidelity, pointwise cross-section, $\sigma_k(E)$. The resonance parameters are passed to the R-Matrix calculation engine within SAMMY to produce a theoretical 0K cross-section. This cross-section is subsequently Doppler broadened to the temperature of the corresponding experimental measurement (e.g., 294K), resulting in a realistic, temperature-dependent pointwise cross-section file for each unique realization.
+    \item Each resonance ladder is used to calculate a high-fidelity pointwise cross section $\sigma_k(E)$. The resonance parameters are passed to the R-matrix calculation engine within SAMMY\cite{sammy} to produce a theoretical 0~K cross section, which is subsequently Doppler broadened\cite{Solbrig} to the temperature of the corresponding experimental measurement.
 
-    \item From each broadened cross-section realization, the corresponding pointwise transmission, $T_k(E)$, is calculated as $T_k(E) = e^{-n\sigma_k(E)}$. This calculation is performed for each sample thickness relevant to the analysis (e.g., 3mm, 6mm, and 12mm for the $^{181}$Ta case).
+    \item From each broadened cross-section realization, the pointwise transmission $T_k(E) = e^{-n\sigma_k(E)}$ is calculated for each sample thickness relevant to the analysis (e.g., 3~mm, 6~mm, and 12~mm for the $^{181}$Ta case).
 
-    \item The resulting pointwise transmission and cross section files for each realization are then numerically integrated over the predefined energy bins of interest (from $E_0$ to $E_1$) to calculate the energy-averaged transmission, $\langle T \rangle_k$, and average cross section, $\langle \sigma \rangle_k$.
+    \item The pointwise transmission and cross section for each realization are numerically integrated over the predefined energy bin from $E_0$ to $E_1$ to obtain the energy-averaged quantities:
     \begin{align}
-        \langle T \rangle_k &= \frac{1}{E_1 - E_0} \int_{E_0}^{E_1} T_k(E) dE \\
-        \langle \sigma \rangle_k &= \frac{1}{E_1 - E_0} \int_{E_0}^{E_1} \sigma_k(E) dE
+        \langle T \rangle_k &= \frac{1}{E_1 - E_0} \int_{E_0}^{E_1} T_k(E)\, dE \\
+        \langle \sigma \rangle_k &= \frac{1}{E_1 - E_0} \int_{E_0}^{E_1} \sigma_k(E)\, dE
     \end{align}
     
-    \item This entire process is repeated for $N$ unique realizations. Unlike the approximations performed in \autoref{sec:tc-monotopic} when calculating self-shielding using the SESH method, this procedure calculates the exact self-shielding correction factor for each realization, $C_{T,k}$:
+    \item After $N$ realizations, the self-shielding correction factor for each realization is computed as:
     \begin{equation}
         C_{T,k} = \frac{\langle T \rangle_k}{e^{-n\langle\sigma\rangle_k}}
     \end{equation}
-    This creates a large population of $C_T$ values, {$C_{T,1}, C_{T,2}, \dots, C_{T,N}$}. The standard deviation of this population, $\Delta C_T$, is the quantified self-shielding model uncertainty for that specific energy bin and sample thickness.
+    Unlike the approximate methods discussed in \autoref{sec:tc-monotopic}, this procedure computes the exact correction factor for each realization by comparing the true energy-averaged transmission to the transmission that would be obtained from the energy-averaged cross section. The standard deviation of the resulting population $\{C_{T,1}, C_{T,2}, \dots, C_{T,N}\}$ is the quantified self-shielding model uncertainty $\Delta C_T$ for that specific energy bin and sample thickness.
 \end{enumerate}
 
+This procedure translates the uncertainty from the finite sampling of resonance parameters into a quantifiable uncertainty on the correction factor that will be applied to an experimental measurement. The approach is conceptually similar to the stochastic resonance ladder method of Rochman et al.\cite{Rochman2013AverageToStatRR}, but is applied here specifically to the self-shielding correction factor rather than to the cross section itself, and the resulting uncertainty is propagated into the evaluation fitting procedure rather than reported as a standalone spread.
 
-This procedure effectively translates the uncertainty from the finite sampling of resonance parameters into a quantifiable uncertainty on the correction factor that will be applied to an experimental measurement.
 
-\section{Case Study: Analysis of Self-Shielding Uncertainty for $^{181}$Ta}
-The methodology was first applied to $^{181}$Ta to investigate the relationship between the number of resonances in an energy bin and the resulting self-shielding model uncertainty. This analysis serves to test the validity of common heuristics used in evaluations and to demonstrate the significance of this uncertainty component. Over 4,100 stochastic realizations of the $^{181}$Ta URR were generated, and the resulting transmissions were calculated for three different sample thicknesses.
+\section{Application to $^{181}$Ta}
+\label{sec:uq-ta181}
 
-\subsection{Impact of Energy Bin Width}
-A key question in URR analysis is how wide an energy bin must be to be considered "statistical." A common rule of thumb suggested in the ENDF-6 formats manual is to include approximately 10 resonances per bin. The results of this study, however, indicate that this heuristic may be insufficient, particularly for heavily self-shielded measurements.
+The methodology was applied to $^{181}$Ta as a representative test case. Over 4,100 stochastic realizations of the $^{181}$Ta URR were generated, and the resulting transmissions were calculated for three sample thicknesses (3~mm, 6~mm, and 12~mm). The analysis investigated two questions: how the model uncertainty depends on the number of resonances in an energy bin, and how it compares in magnitude to the experimental statistical uncertainty.
+
+\subsection{Dependence on Bin Width and Sample Thickness}
+
+A common heuristic, suggested in the ENDF-6 formats manual\cite{endf-manual}, is that an energy bin should contain approximately 10 resonances to be considered statistically adequate. The results of this study indicate that this rule of thumb is insufficient for heavily self-shielded measurements.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.85\linewidth]{Uncertainty Quantification/Figures/ct-err-vs-binwidth.png}
-    \caption{The relative uncertainty of the self-shielding correction factor $(\Delta C_T / C_T)$ as a function of the number of resonances included in the energy bin for three different sample thicknesses of $^{181}$Ta. The uncertainty is shown for an energy bin centered at 3.5 keV.}
+    \caption{Relative uncertainty of the self-shielding correction factor ($\Delta C_T / C_T$) as a function of the number of resonances included in the energy bin for three sample thicknesses of $^{181}$Ta at 3.5~keV. The commonly cited heuristic of 10 resonances per bin\cite{endf-manual} corresponds to nearly 10\% model uncertainty for the thickest sample.}
     \label{fig:ct-error-vs-binwidth}
 \end{figure}
 
-\autoref{fig:ct-error-vs-binwidth} shows the relative uncertainty of the correction factor, $\Delta C_T / C_T$, as a function of the number of resonances included in an energy bin centered at 3.5 keV. The uncertainty decreases predictably as the number of resonances increases, as expected from statistical sampling. However, the magnitude of the uncertainty is strongly dependent on the sample thickness. For the thinnest sample (3mm), the uncertainty is relatively small, dropping below 2\% with only a few dozen resonances. In contrast, for the heavily self-shielded 12mm sample, the uncertainty remains above 5\% even when 50 resonances are included in the bin. At the heuristic of 10 resonances per bin, the model uncertainty is nearly 10\% for the 12mm sample, a significant value that cannot be ignored. This demonstrates that a single heuristic for bin size is not universally applicable; the required number of resonances depends heavily on the degree of self-shielding.
+\autoref{fig:ct-error-vs-binwidth} shows the relative uncertainty of the correction factor, $\Delta C_T / C_T$, as a function of the number of resonances included in an energy bin centered at 3.5~keV. The uncertainty decreases predictably with increasing bin size, as expected from statistical sampling. However, the magnitude of the uncertainty is strongly dependent on the sample thickness. For the thinnest sample (3~mm), the uncertainty drops below 2\% with only a few dozen resonances. In contrast, for the heavily self-shielded 12~mm sample, the uncertainty remains above 5\% even with 50 resonances per bin. At the commonly cited heuristic of 10 resonances per bin, the model uncertainty approaches 10\% for the 12~mm sample. This is a significant value that cannot be neglected. This demonstrates that no single heuristic for bin width is universally adequate; the required number of resonances depends on the degree of self-shielding, which is determined by the sample thickness.
 
-The consequence of this self-shielding uncertainty having experimental dependencies beyond just the resonance statistics introduces complexity into the binning structure when it comes to performing an evaluation.
+\subsection{Comparison to Experimental Uncertainty}
 
-A thin sample can have a more certain self-shielding correction factor
-Depending on the isotope, it may not be feasible to get good statistics from a thin, minimally self-shielded sample
-Conversely, a thicker sample would have a different requirement for how wide a bin has to be to optimize the self-shielding correction assumptions.
-That bin could end up being prohibitively wide for both thin and thick sample transmissions.
-Instead, a better method would be to remove that statistical constraint and incorporate that uncertainty into the evaluation.
-
-\subsection{A Quantitative Approach to Binning Strategy}
-The choice of energy bin width for averaging experimental data presents a fundamental challenge. The bins must be wide enough to contain a statistically representative sample of resonances, yet narrow enough that the average resonance parameters can be considered constant across the energy range. The methodology developed in this work provides a tool to quantitatively address the first of these competing requirements.
-
-Instead of relying on a heuristic, an evaluator can now calculate the model uncertainty ($\sigma_{C_T}$) for any chosen binning scheme. This allows for an informed, quantitative trade-off. To contextualize the magnitude of this model uncertainty, it was compared to the reported statistical uncertainty from a recent $^{181}$Ta transmission measurement \cite{Brown2019}.
+To assess the practical significance of the self-shielding model uncertainty, it was compared to the reported experimental statistical uncertainty from a recent $^{181}$Ta transmission measurement by Brown et al.\cite{Brown2019}.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.85\linewidth]{Uncertainty Quantification/Figures/Brown_Comparison.png}
-    \caption{Comparison of the self-shielding model uncertainty (orange) with the reported experimental statistical uncertainty from Brown (2019) \cite{Brown2019} for a 12mm $^{181}$Ta transmission measurement. The model uncertainty is a significant component of the total uncertainty budget.}
+    \caption{Comparison of the self-shielding model uncertainty (orange) with the experimental statistical uncertainty reported by Brown et al.\cite{Brown2019} for a 12~mm $^{181}$Ta transmission measurement. The model uncertainty is a significant fraction of the experimental uncertainty, particularly at lower energies in the URR where fewer resonances contribute to each bin.}
     \label{fig:ta181-uq-vs-experimental}
 \end{figure}
 
-As shown in \autoref{fig:ta181-uq-vs-experimental}, the calculated self-shielding model uncertainty is a significant component of the total uncertainty budget. While it does not exceed the experimental uncertainty, it is of a comparable magnitude, particularly in the lower energy range of the URR. This finding is critical: it confirms that the finite resonance effect is not a minor correction but a primary source of uncertainty that has been systematically neglected in previous evaluations.
+As shown in \autoref{fig:ta181-uq-vs-experimental}, the calculated self-shielding model uncertainty is comparable in magnitude to the experimental uncertainty, particularly in the lower energy range of the URR where the number of resonances per bin is smallest. While it does not exceed the experimental uncertainty for this well-measured isotope, it is of the same order. This confirms that the finite resonance effect is not a minor correction but a primary source of uncertainty that has been systematically absent from previous evaluations.
 
-This analysis provides a quantitative basis for an evaluator's binning strategy for the experimental data used in a fit. The goal is to select a bin width that is physically justifiable (i.e., the energy-dependence of parameters within the bin is not significant) while being fully aware of the magnitude of the model uncertainty that this choice implies. This is a more rigorous approach than relying on fixed rules, and it ensures that this model uncertainty is properly propagated into the final evaluation. It is important to distinguish this experimental data binning from the potentially coarser energy grid used to report the final evaluated parameters.
 
-\section{Propagating Model Uncertainty into an Evaluation}
+\section{Implications for Evaluation Practice}
+\label{sec:uq-implications}
 
-The preceding analysis has demonstrated that the finite resonance effect is a significant and previously unaccounted-for source of model uncertainty. The final step in this methodology is to incorporate this new uncertainty component into the parameter fitting procedure to achieve more realistic and physically meaningful results.
+The finding that the self-shielding model uncertainty depends on experimental conditions and not merely on the resonance statistics of the isotope has important consequences for how an evaluator selects energy bins.
 
-The model uncertainty, quantified as the relative standard deviation of the correction factor ($\sigma_{C_T} / C_T$), is propagated to the measured transmission. It is treated as an additional source of uncorrelated uncertainty and is combined in quadrature with the experimental statistical uncertainty ($\sigma_{stats}$) for each data point $i$:
+A thin sample experiences minimal self-shielding and therefore has a small, well-determined correction factor; it can tolerate a relatively narrow energy bin without incurring excessive model uncertainty. However, depending on the isotope, a thin sample may not yield sufficient counting statistics to produce a useful measurement, particularly in the URR where count rates are low. A thicker sample provides better counting statistics but requires a wider energy bin to keep the model uncertainty under control, because the correction factor is more sensitive to the tails of the cross-section distribution. That wider bin may itself become prohibitively broad: it may violate the energy-independence assumption for both the thick and thin sample data, or obscure energy-dependent features that the evaluation needs to resolve.
 
+In the conventional approach, the evaluator attempts to find a single bin width that satisfies all of these competing requirements simultaneously: statistical adequacy, energy independence, and adequate counting statistics. Consequently, the finite resonance effect is silently absorbed into the fit residuals. The methodology developed in this work provides an alternative: rather than trying to eliminate the model uncertainty through bin width selection, the evaluator can quantify it for any chosen binning scheme and incorporate it explicitly into the fitting procedure. The bin width can then be chosen on physical grounds, i.e., narrow enough to preserve energy-dependent features, wide enough to maintain a reasonable number of resonances, and with full knowledge of the resulting model uncertainty and its impact on the final parameter estimates.
+
+This distinction between the energy binning used for experimental data and the potentially coarser grid used to report the final evaluated parameters is important. The data bins should be selected to optimize the information content of the measurement. The parameter grid is a separate choice governed by the energy dependence of the average resonance parameters themselves.
+
+
+\section{Propagating Model Uncertainty into the Evaluation}
+\label{sec:uq-propagation}
+
+The final step is to incorporate the quantified self-shielding model uncertainty into the parameter fitting procedure. The model uncertainty, expressed as the standard deviation of the correction factor $\Delta C_T$ for each energy bin and sample thickness, is propagated to the measured transmission as an additional uncertainty component. It is treated as uncorrelated across energy bins and combined in quadrature with the experimental uncertainty $\sigma_{\text{stats}}$ for each data point $i$:
 \begin{equation}
-    \sigma_{i,total} = \sqrt{\sigma_{i,stats}^2 + \sigma_{i,C_T}^2}
+    \sigma_{i,\text{total}} = \sqrt{\sigma_{i,\text{stats}}^2 + \sigma_{i,C_T}^2}
     \label{eq:total_uncert}
 \end{equation}
 
-By incorporating this combined uncertainty into the Bayesian fitting algorithm, the new model uncertainty component will have several important effects on the evaluation:
-\begin{itemize}
-    \item It will naturally increase the posterior uncertainty on the final fitted parameters, directly addressing the problem of unrealistically small uncertainties that require artificial inflation.
-    \item It will reduce the statistical weight of data points that have high model uncertainty (e.g., those from heavily self-shielded samples or overly narrow energy bins), leading to a more robust fit.
-    \item The resulting parameter covariance matrix will be a more accurate representation of the true parameter knowledge, as it now properly accounts for a significant source of systematic model error.
-\end{itemize}
+The treatment of the model uncertainty as uncorrelated across bins is an approximation. In principle, adjacent bins could share correlations through resonances near the bin boundaries or through the common dependence of the correction factor on the underlying average resonance parameters. However, because each bin's correction factor is computed from an independent set of stochastic realizations, and because the resonance ladders are regenerated independently for each bin, the bin-to-bin correlations from boundary effects are expected to be small. A more rigorous treatment would compute the full bin-to-bin covariance matrix from simultaneous sampling across all bins; this extension is left for future work.
 
-This procedure provides the necessary framework to resolve the deficiencies outlined at the beginning of this chapter. The practical application of this method, including its impact on the evaluation of average resonance parameters and the characterization of intermediate structure for $^{90}$Zr and $^{91}$Zr, will be the subject of the following chapter.
+When this combined uncertainty is used in the Bayesian fitting algorithm implemented in SAMMY\cite{sammy}, the model uncertainty component has three principal effects on the evaluation. First, it naturally increases the posterior uncertainty on the fitted parameters, directly addressing the problem of unrealistically small uncertainties that previously required artificial inflation. Second, it reduces the statistical weight of data points that have large model uncertainty, i.e., those from heavily self-shielded samples or narrow energy bins. This leads to a more robust fit that is less sensitive to the binning choices of any single dataset. Third, the resulting parameter covariance matrix more accurately reflects the true state of knowledge, because it now accounts for a significant source of model error that was previously absent.
+
+The practical application of this method, including its impact on the evaluation of average resonance parameters and the characterization of intermediate structure for $^{90}$Zr and $^{91}$Zr, is demonstrated in \autoref{chap:evaluation}.
+
+
+\section{Summary}
+\label{sec:uq-summary}
+
+This chapter has identified the finite resonance effect: the statistical sampling uncertainty inherent in computing self-shielding corrections from a limited number of resonances per energy bin, as a significant and previously unaccounted-for source of model uncertainty in URR evaluations. A Monte Carlo method was developed to quantify this uncertainty by generating thousands of stochastic resonance ladders and computing the resulting distribution of correction factors for each energy bin and sample thickness.
+
+Application to $^{181}$Ta demonstrated three key findings. First, the commonly cited heuristic of 10 resonances per bin is insufficient for heavily self-shielded samples, where the model uncertainty can approach 10\% even at this bin width. Second, the model uncertainty depends strongly on the sample thickness, not just on the nuclear properties of the isotope, making it impossible to define a single ``adequate'' bin width for all experimental datasets. Third, the model uncertainty is comparable in magnitude to the experimental statistical uncertainty for well-measured isotopes, confirming that it is a significant component of the total uncertainty budget.
+
+The methodology provides a quantitative framework for incorporating this model uncertainty into the evaluation procedure through quadrature combination with experimental uncertainties and subsequent Bayesian fitting. This produces more realistic posterior parameter uncertainties without resorting to ad hoc inflation, and ensures that the influence of each dataset is weighted appropriately by the total uncertainty associated with its specific measurement conditions. The application of this framework to the $^{90}$Zr and $^{91}$Zr evaluation is the subject of the following chapter.

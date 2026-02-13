@@ -1,9 +1,7 @@
-This chapter details and validates the procedure for calculating the theoretical average transmission to accurately fit parameters to self-shielded transmission measurements in the URR\cite{Bahran2015}. As shown in \autoref{sec:correction-factor}, the theoretical average transmission can be calculated as the product of the transmission of the average cross section, $e^{-n\langle \sigma \rangle}$, and a transmission correction factor $C_T$. While $C_T$ was previously defined in \autoref{eq:transmission-correction-factor} with an analytical form over an energy range, this procedure is not feasible in the URR where the true cross-section is unknown. Instead, SESH uses Monte Carlo integration in order to determine these energy-averaged quantities\cite{fitacs}.
-
-
+This chapter details and validates the procedure for calculating the theoretical average transmission to accurately fit parameters to self-shielded transmission measurements in the URR\cite{Bahran2015}. As shown in \autoref{sec:resonance-self-shielding}, the theoretical average transmission can be calculated as the product of the transmission of the average cross section, $e^{-n\langle \sigma \rangle}$, and a transmission correction factor $C_T$. SESH uses Monte Carlo integration in order to determine these energy-averaged quantities\cite{sesh}.
 
 SESH is used here as the transport engine that computes the self-shielding transmission correction factor $C_T$, while SAMMY performs the parameter fitting. The goal of this chapter is to validate that $C_T$ is calculated correctly and that applying it within SAMMY leads to consistent transmission predictions and stable fits.
-\section{Transmission Correction for a Monotopic Sample}
+\section{Transmission Correction for a Mono-Isotopic Sample}
 \label{sec:tc-monotopic}
 
 The calculation of the transmission correction factor is centered around a Monte Carlo simulation that generates a statistical population of cross-section realizations. This process, described in detail in Chapters \ref{chap:theory} and \ref{chap:implementation}, simulates the inherent fluctuations of the cross-section in the URR. For each Monte Carlo history, a ``resonance ladder'' is constructed for each channel by sampling resonance widths from the Porter-Thomas\cite{Porter1956} distribution and level spacings from a Wigner distribution\cite{Wigner1951}. These stochastically generated parameters are then used within the SLBW formalism\cite{Lane1958} to produce a single realization of the total microscopic cross-section, $\sigma_i$.
@@ -17,7 +15,7 @@ and
     \langle T \rangle = \frac{1}{N} \sum_{i=1}^{N} T_{i}
 \end{equation}
 
-From these averages, the correction factor defined in \autoref{sec:correction-factor} can be approximated as:
+From these averages, the correction factor defined in \autoref{sec:resonance-self-shielding} can be approximated as:
 \begin{equation}
     C_T \approx \frac{\langle T \rangle}{e^{-n\langle \sigma \rangle}}
 \label{eq:CT_mc}
@@ -32,7 +30,6 @@ Before integrating the transmission correction into the fitting procedure, it is
 \label{ssec:mcnp-benchmark-model}
 
 MCNP is used here as a transport reference: both MCNP and SAMMY/SESH use the same evaluated nuclear data, so the comparison primarily tests the correction method and its implementation rather than differences in input cross sections.
-\label{ssec:mcnp-benchmark-model}
 The MCNP model was configured to simulate neutron transmission through a $^{181}$Ta sample. The cross-section data for the simulation was prepared from the ENDF/B-VIII.1 evaluation \cite{endf-manual} and processed into a pointwise format using NJOY \cite{njoy}. By using the exact, finely-resolved cross sections from a formal evaluation, the MCNP simulation can directly calculate the true average transmission, $\langle T \rangle$, and the transmission of the average cross section, $e^{-n\langle\sigma\rangle}$, over a given energy group. The benchmark correction factor is then calculated as:
 \begin{equation}
     C_{T, \text{MCNP}} = \frac{\langle T \rangle_{\text{P-Table=ON}}}{\langle T \rangle_{\text{P-Table=OFF}}}
@@ -77,24 +74,24 @@ When resonance widths are much larger than the mean level spacing ($\Gamma \gg D
 
 The SESH code addresses this by allowing the user to specify a number of external resonance pairs: resonances placed above and below the bin boundaries spaced by sampling from the Wigner Distribution\cite{Wigner1951}. Adding more pairs extends the sampled ladder further from the bin edges, ensuring that the tails of distant resonances are properly included in the cross-section calculation. To quantify the impact of this setting, the correction factor was calculated for a 4~mm $^{181}$Ta sample at 300~K using one through four external resonance pairs.
 
-The results, shown in \autoref{fig:tc-resonance-pairs}, demonstrate that the inclusion of external resonance pairs has a slight but noticeable influence on the calculated correction factor. As more pairs are added, the SESH calculation converges toward the MCNP benchmark value, with the relative error decreasing correspondingly. The effect is most visible at lower energies where the resonances are less overlapping and the bin-edge truncation matters more. By four external pairs the improvement saturates, and additional pairs produce no further change within the statistical precision of the calculation. For the remainder of this work, four external resonance pairs were used in all SESH calculations.
+The results, shown in \autoref{fig:tc-resonance-pairs}, demonstrate that the inclusion of external resonance pairs has a slight but noticeable influence on the calculated correction factor. As more pairs are added, the SESH calculation converges toward the MCNP benchmark value. The effect is most visible at lower energies where the resonances are less overlapping and the bin-edge truncation matters more. By four external pairs the improvement saturates, and additional pairs produce no further change within the statistical precision of the calculation. For the remainder of this work, four external resonance pairs were used in all SESH calculations.
 
 \begin{figure}[H]
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{Transmission Correction/Figures/ResonancePairInfluenceOnCT.png}
-        \caption{Correction factor comparison}
+        \includegraphics[width=\textwidth]{Transmission Correction/Figures/resonancepair_CT.pdf}
+        \caption{SESH correction factor compared to MCNP (solid black line) for increasing numbers of external resonance pairs.}
         \label{fig:tc-resonance-pairs-data}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{Transmission Correction/Figures/ResonancePairError.png}
-        \caption{Relative error}
-        \label{fig:tc-resonance-pairs-error}
+        \includegraphics[width=\textwidth]{Transmission Correction/Figures/resonancepair_convergence.pdf}
+        \caption{Convergence of $C_T$ toward the MCNP reference (dotted lines) as a function of the number of external pairs at selected energies.}
+        \label{fig:tc-resonance-pairs-convergence}
     \end{subfigure}
-    \caption{Transmission correction factor for a 4~mm $^{181}$Ta sample at 300~K as a function of the number of external resonance pairs. (a) SESH calculations compared to the MCNP benchmark. (b) Relative error between SESH and MCNP.}
+    \caption{Effect of external resonance pairs on the transmission correction factor for a 4~mm $^{181}$Ta sample at 300~K. The correction converges by approximately four external pairs at all energies, with the effect most pronounced at lower energies where resonance overlap is weakest.}
     \label{fig:tc-resonance-pairs}
 \end{figure}
 
@@ -104,51 +101,73 @@ The results, shown in \autoref{fig:tc-resonance-pairs}, demonstrate that the inc
 
 Of the parameters investigated in this chapter, the sample thickness exerts the strongest influence on the transmission correction factor. This sensitivity follows directly from the physics of self-shielding: a thicker sample amplifies the nonlinear relationship between the cross-section fluctuations and the transmitted intensity. As presented in \autoref{eq:taylor-series-expansion},  the correction factor depends on the cross-section variance as $C_T \approx 1 + \frac{1}{2}n^2 \mathrm{Var}(\sigma)$, where $n$ is the sample thickness in atoms per barn. For thin samples the quadratic term is small and $C_T$ remains close to unity. But as $n$ increases the correction grows rapidly and the shape of the cross-section distribution become increasingly important.
 
-To characterize this behavior and determine the range of applicability for SESH, the correction factor was computed for 2~mm, 4~mm, 8~mm, and 12~mm samples of $^{181}$Ta at 300~K and compared against the MCNP benchmark. The results, shown in \autoref{fig:tc-thickness}, reveal two distinct regimes. For the thinner samples (2--4~mm), the agreement between SESH and MCNP is excellent, with relative errors below 0.1\%. For the thicker samples (8--12~mm), a systematic discrepancy emerges in which SESH predicts a larger correction factor than MCNP, with the disagreement growing as $C_T$ increases beyond approximately 1.5.
-
-This discrepancy initially appears to suggest a limitation of the SESH methodology at large thicknesses. However, the source of the disagreement is not in SESH's Monte Carlo sampling, but rather in the way the MCNP benchmark handles cross-section fluctuations in the URR. MCNP represents the URR cross-section distribution through probability tables, which are pre-generated discrete approximations to the continuous distribution sampled by SESH. When the probability table mean differs from the pointwise cross section used in transport, the standard mean-enforcement procedure (the LSSF=1 method) rescales the entire distribution multiplicatively, which inadvertently alters the variance of the cross-section distribution. Because the self-shielding effect depends directly on this variance, the rescaled probability tables systematically underpredict the correction factor, and the underprediction grows with sample thickness as the transmission becomes more sensitive to the tails of the distribution. A detailed analysis of this probability table variance conservation issue, including its isolation through controlled numerical experiments, is presented in \autoref{chap:multi-isotope}.
-
-For the purposes of this chapter, the key conclusion is that the observed discrepancy at large thicknesses does not indicate an error in the SESH calculation. Rather, it reflects a known limitation of the MCNP probability table methodology that becomes visible precisely when self-shielding is strong. The SESH results, which sample directly from the resonance parameter distributions without the intermediate probability table discretization, are expected to be the more accurate representation in this regime. As a practical guideline for users of the current MCNP-based benchmarking approach, experimental designs that keep $C_T \leq 1.5$ remain in the regime where the two methods agree and the MCNP benchmark can be used with confidence.
+To characterize this behavior and determine the range of applicability for SESH, the correction factor was computed for 2~mm, 4~mm, 8~mm, and 12~mm samples of $^{181}$Ta at 300~K and compared against the MCNP benchmark. The results are shown in \autoref{fig:tc-thickness}. For the thinner samples (2--4~mm), the agreement between SESH and MCNP is excellent, with relative errors below 0.1\%. For the thicker samples (8--12~mm), a systematic positive bias emerges in which SESH predicts a larger correction factor than MCNP, with the disagreement growing at lower energies where self-shielding is strongest.
 
 \begin{figure}[H]
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{Transmission Correction/Figures/ct-verification.png}
-        \caption{Correction factor comparison}
+        \includegraphics[width=\textwidth]{Transmission Correction/Figures/thickness_CT.pdf}
+        \caption{SESH correction factor (solid lines) compared to MCNP (open circles) for each sample thickness.}
         \label{fig:tc-thickness-data}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{Transmission Correction/Figures/ct-verification-err.png}
-        \caption{Relative error}
+        \includegraphics[width=\textwidth]{Transmission Correction/Figures/thickness_error.pdf}
+        \caption{Relative deviation of SESH from MCNP as a function of incident energy, showing increasing disagreement for thicker samples at lower energies.}
         \label{fig:tc-thickness-error}
     \end{subfigure}
-    \caption{Transmission correction factor for various thicknesses of a $^{181}$Ta sample at 300~K. (a) SESH calculations compared to the MCNP benchmark. (b) Relative error between SESH and MCNP, showing increasing deviation for thicker samples where $C_T$ exceeds 1.5.}
+    \caption{Transmission correction factor for various thicknesses of a $^{181}$Ta sample at 300~K. The two methods agree to within 0.1\% for samples up to 4~mm, while thicker samples exhibit a systematic positive bias in SESH relative to MCNP.}
     \label{fig:tc-thickness}
 \end{figure}
+
+The relative error in \autoref{fig:tc-thickness-error} appears to correlate more closely with the magnitude of the correction than with the sample thickness alone. This is confirmed in \autoref{fig:tc-thickness-vs-ct}, which collapses the data from all four thicknesses onto a single trend when plotted against $C_T$ rather than energy. The correlation demonstrates that the discrepancy is not a thickness-specific artifact but rather grows systematically with the strength of the self-shielding correction itself.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Transmission Correction/Figures/thickness_error_vs_ct.pdf}
+    \caption{Relative deviation of SESH from MCNP as a function of the MCNP correction factor magnitude. Data from all four sample thicknesses collapse onto a common trend, confirming that the discrepancy scales with the strength of the self-shielding correction rather than with thickness independently.}
+    \label{fig:tc-thickness-vs-ct}
+\end{figure}
+
+That the disagreement is a modeling difference rather than a numerical precision issue is confirmed by \autoref{fig:tc-thickness-residual}, which expresses the residual in units of the SESH Monte Carlo statistical uncertainty. At all energies and thicknesses, the residuals far exceed the $\pm 2\sigma$ band of the SESH calculation, demonstrating that the SESH estimator has fully converged and that the observed discrepancy reflects a genuine difference in the self-shielding predictions of the two methods.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Transmission Correction/Figures/thickness_residual_sigma.pdf}
+    \caption{Residual between SESH and MCNP correction factors expressed in units of the SESH Monte Carlo statistical uncertainty ($\sigma$). The shaded band indicates $\pm 2\sigma$. The residuals exceed the statistical precision of the SESH calculation at low energies, confirming that the disagreement is a modeling difference rather than numerical noise.}
+    \label{fig:tc-thickness-residual}
+\end{figure}
+
+This behavior points to a modeling difference between SESH and the MCNP benchmark rather than an error in either code. SESH samples cross sections directly from the resonance parameter distributions, while the MCNP benchmark represents the URR cross-section distribution through pre-computed probability tables generated by NJOY. These two representations need not produce identical self-shielding corrections, particularly as the correction grows large and the result becomes more sensitive to the details of the sampled cross-section distribution. The systematic nature of the disagreement (always in the same direction, and scaling with $C_T$) is consistent with a difference in how the two methods represent the underlying cross-section fluctuations.
+
+This level of disagreement between independent URR self-shielding methods is not unexpected. The probability table approach involves several layers of approximation. Each of which can introduce subtle distortions that compound as the self-shielding correction grows. Differences between probability table implementations and direct Monte Carlo sampling have been documented across multiple independent studies \cite{Sublet2009_CEAR6227_URRPT_SelfShield, Cullen2010_ENDF369_URRHistory, Holcomb2017_NewURRProbTables, Brown2024_URRProbTableTests}. These investigations have identified various sources of discrepancy, including sensitivity to the number of probability table bins, ambiguities in the ENDF URR format conventions, and limitations of the underlying single-level Breit-Wigner approximation used in table generation. The sub-percent disagreement observed here between SESH and the NJOY-generated probability tables used in MCNP is consistent with the range of inter-code variability reported in these studies.
+
+For the purposes of validation in this chapter, the key conclusion is that the SESH and MCNP methods agree well within the regime most relevant to typical transmission experiments ($C_T < 1.5$), and that the divergence at larger corrections reflects a difference in the underlying cross-section representations rather than a failure of the Monte Carlo sampling procedure. The probability table methodology used by MCNP is investigated further in \autoref{chap:multiiso-transmission-correction}.
 
 
 \subsection{Verification of Sample Temperature Dependence}
 The final parameter investigated was the sample temperature, which influences the Doppler broadening of the resonances. The $^{181}$Ta evaluation was processed at five different temperatures: 100~K, 200~K, 300~K, 400~K, and 500~K. These cross sections were used to calculate the correction factor in MCNP for a 4~mm thick sample, which was then compared to the SESH results at the same temperatures.
 
-The results, presented in \autoref{fig:tc-temperature} and \autoref{fig:tc-temperature-error}, show a very strong agreement between SESH and MCNP across all examined temperatures. The relative error does not exhibit any significant bias with temperature, indicating that the Doppler broadening and other temperature-dependent physics are correctly modeled in SESH for the purpose of calculating the transmission correction factor.
+The results, presented in \autoref{fig:tc-temperature}, show a very strong agreement between SESH and MCNP across all examined temperatures. The relative error does not exhibit any significant bias with temperature, indicating that the Doppler broadening and other temperature-dependent physics are correctly modeled in SESH for the purpose of calculating the transmission correction factor.
 
  \begin{figure}[H]
      \centering
-     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/SESH_MCNP_Temperature.png}
-     \caption{Comparison between MCNP and SESH correction factors at various temperatures for a 4~mm thick $^{181}$Ta sample.}
+     \begin{subfigure}[b]{0.48\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Transmission Correction/Figures/temperature_CT.pdf}
+         \caption{SESH correction factor (solid lines) compared to MCNP (open circles) at each temperature.}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.48\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{Transmission Correction/Figures/temperature_error.pdf}
+         \caption{Relative deviation of SESH from MCNP as a function of incident energy at each temperature.}
+     \end{subfigure}
+     \caption{Transmission correction factor for a 4~mm $^{181}$Ta sample at temperatures from 100~K to 500~K. The relative deviation remains below 0.125\% across all temperatures and energies, with no systematic temperature-dependent bias.}
      \label{fig:tc-temperature}
  \end{figure}
 
- \begin{figure}[H]
-     \centering
-     \includegraphics[width=0.8\textwidth]{Transmission Correction/Figures/ct_temperature_err.png}
-     \caption{Relative error between SESH and MCNP at various temperatures for a 4~mm thick $^{181}$Ta sample.}
-     \label{fig:tc-temperature-error}
- \end{figure}
- 
 \section{Integration with the Parameter Fitting Workflow}
 After verifying the standalone accuracy of the SESH model, the next crucial step is to integrate it into the SAMMY resonance parameter fitting code. This integration transforms the correction factor from a simple calculation into a dynamic component of the fitting process, allowing experimental transmission data to be fit directly. This requires not only the correction factor itself, but also its derivative with respect to the parameters being adjusted.
 
@@ -164,48 +183,49 @@ To solve this, a numerical approach was implemented. For a given parameter $u$ (
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeEstimationExample.png}
-    \caption{Estimation of $\partial C_T / \partial u$ for $S_0$ at 3~keV using linear regression.}
+    \caption{Estimation of $\partial C_T / \partial u$ for $S_0$ at 3~keV using linear regression on the jointly sampled $(S_0, C_T)$ pairs. The slope of the best-fit line provides the derivative estimate.}
     \label{fig:ct-derivative-regression}
 \end{figure}
+
+The advantage of the regression approach over finite differences is quantified in \autoref{fig:ct-derivative-variance} and \autoref{fig:derivative-variance-reduction}. At a fixed number of histories, the regression estimate exhibits substantially lower variance than the finite difference estimate, because it exploits the correlation structure across the full set of sampled parameter values rather than relying on the difference between only two evaluations. \autoref{fig:derivative-variance-reduction} confirms that both methods converge as $N$ increases, but the regression estimator reaches a given precision threshold with significantly fewer histories. In practice, this means that the regression derivative can be computed at negligible additional cost during the same Monte Carlo run already required for $C_T$ itself.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeEstimation.png}
-    \caption{Comparison of variance of calculated derivative using linear regression versus finite difference methods at 3~keV for \textsuperscript{181}Ta.}
+    \caption{Comparison of derivative estimate distributions from the linear regression and finite difference methods at 3~keV for \textsuperscript{181}Ta, illustrating the lower variance achieved by the regression approach for the same number of Monte Carlo histories.}
     \label{fig:ct-derivative-variance}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeMethod.png}
-    \caption{Variance as a function of total particle histories for both linear regression and finite difference.}
+    \caption{Variance of the derivative estimate as a function of the total number of Monte Carlo histories for both the linear regression and finite difference methods. The regression method converges more rapidly, achieving the same precision with fewer histories.}
     \label{fig:derivative-variance-reduction}
 \end{figure}
 
 
 \subsection{Verification of the Integrated Fitting Procedure}
-With a method to calculate both $C_T$ and its derivative, the fully integrated SESH+SAMMY workflow could be verified. The primary goal of this verification is to demonstrate that the fitting procedure can accurately recover known resonance parameters from synthetic experimental data.
 
-The verification test was structured as follows:
-\begin{enumerate}[noitemsep]
-    \item Synthetic transmission data for multiple sample thicknesses was generated using MCNP with the known $^{181}$Ta resonance parameters from the ENDF/B-VIII.1 evaluation.
-    \item An initial set of incorrect resonance parameters was chosen from an older compilation, the Atlas of Neutron Resonances \cite{atlas}.
-    \item The SESH+SAMMY code was used to fit the synthetic MCNP data, starting from the incorrect parameters.
-\end{enumerate}
+With a method to calculate both $C_T$ and its derivative established, the fully integrated SESH+SAMMY workflow can be verified end-to-end. The goal of this verification is to demonstrate that the fitting procedure can recover known resonance parameters from synthetic data, analogous to the verification tests used for the capture yield correction in \autoref{chap:capture-yield-correction} and the multi-isotope extension in \autoref{chap:multiiso-transmission-correction}.
 
-The fitting process was performed twice: once with the numerical derivative calculation for $\partial C_T / \partial u$ enabled, and once assuming $\partial C_T / \partial u = 0$. The latter case represents the implicit assumption made in previous, manual correction workflows. The results, shown in \autoref{fig:fitting-comparison}, demonstrate that both fits converge to similar values. However, as detailed in Table \ref{tab:fitting-error}, enabling the derivative calculation produces a more accurate fit with a lower final $\chi^2/N$. The final converged strength function values in Table \ref{tab:fitting-values} confirm that the new, fully integrated workflow successfully recovers the true parameters used to generate the synthetic data. This verifies that the integration is correct and the derivative estimation is sufficiently accurate for use in the fitting procedure.
+Synthetic transmission data for multiple sample thicknesses of $^{181}$Ta were generated using MCNP with the ENDF/B-VIII.1 evaluation parameters as the ground truth. The starting parameters for the fit were drawn from the Atlas of Neutron Resonances \cite{atlas}, which provides an older, independently compiled set of average resonance parameters for $^{181}$Ta. This choice ensures that the initial guess is physically reasonable but deliberately offset from the true values, so that the fit must traverse a meaningful region of parameter space to converge. Only the neutron strength functions ($S_0$, $S_1$, $S_2$) were varied during the fit; all other parameters, including the distant-level contribution and average radiative widths, were held at their evaluated values.
+
+The fitting procedure was executed twice under identical conditions: once with the numerically estimated derivative $\partial C_T / \partial u$ included in the Jacobian, and once with the assumption $\partial C_T / \partial u = 0$. The latter case corresponds to the implicit approximation used in all previous self-shielding correction workflows, in which the correction factor is recomputed at each iteration but treated as independent of the fitted parameters when forming the update step.
+
+The fitted transmission curves for both cases are compared against the synthetic data in \autoref{fig:fitting-comparison}. Both fits converge to final predictions that visually reproduce the synthetic data, indicating that the integrated workflow functions correctly in either mode.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DCtFittingPerformance.png}
-    \caption{Fitting Result Comparison between numerically estimating the derivative $\partial C_T/\partial u$ versus the assumption $\partial C_T/\partial u=0$ for all parameters.}
+    \caption{Fitted self-shielded transmission compared to the synthetic MCNP data for $^{181}$Ta. Results are shown for both the derivative-enabled ($\partial C_T / \partial u \neq 0$) and derivative-free ($\partial C_T / \partial u = 0$) fitting modes.}
     \label{fig:fitting-comparison}
 \end{figure}
 
+The quantitative comparison is summarized in Tables~\ref{tab:fitting-error} and \ref{tab:fitting-values}. Enabling the derivative calculation yields a modestly lower reduced chi-square ($\chi^2/N = 1.981$ versus $2.444$), confirming that the additional Jacobian information does improve the fit. More importantly, the recovered strength function values in \autoref{tab:fitting-values} are close to the ENDF/B-VIII.1 truth values in both cases, demonstrating that the integrated workflow successfully recovers the parameters used to generate the synthetic data regardless of whether the derivative is included.
 
 \begin{table}[H]
     \centering
-    \caption{Final reduced chi-square ($\chi^2/N$) at convergence}
+    \caption{Final reduced chi-square ($\chi^2/N$) at convergence for the two fitting modes applied to synthetic $^{181}$Ta transmission data.}
     \begin{tabular}{| c | c c |}
         \hline
                                & $\partial C_T / \partial u$=ON  & $\partial C_T / \partial u$=OFF \\ 
@@ -219,7 +239,7 @@ The fitting process was performed twice: once with the numerical derivative calc
 
 \begin{table}[H]
     \centering
-    \caption{Final Converged Values for both derivative cases}
+    \caption{Recovered $^{181}$Ta neutron strength functions from the synthetic data fit. The ENDF/B-VIII.1 column gives the true values used to generate the data; the two fitting modes are compared.}
     \begin{tabular}{|c|ccc|}
         \hline
         Parameter & ENDF-8.1  & $\partial C_T / \partial u =$ON  & $\partial C_T / \partial u =$OFF \\
@@ -232,12 +252,14 @@ The fitting process was performed twice: once with the numerical derivative calc
     \label{tab:fitting-values}
 \end{table}
 
+The residual differences between the recovered and true strength functions in \autoref{tab:fitting-values} merit brief comment. The $S_0$ and $S_2$ values are recovered to within approximately 5--10\% of the evaluation in both modes, while $S_1$ shows a larger residual offset in the derivative-enabled case. These offsets are not unexpected for a fit to synthetic transmission data alone: transmission measurements are most sensitive to the total cross section, which in the URR is dominated by $s$-wave and $d$-wave contributions. The $p$-wave strength function has a comparatively weaker effect on the total cross section at these energies, making it inherently more difficult to constrain from transmission data in isolation. The key observation is that both fitting modes converge to physically reasonable values from a deliberately incorrect starting point, confirming that the integrated workflow is functioning correctly.
+
 
 \section{Summary of Monotopic Transmission Correction Validation}
 \label{ssec:tc-monotopic-summary}
 
-The verification exercises detailed in this chapter confirm that the SESH methodology for calculating the transmission correction factor, $C_T$, is accurate for a range of experimental conditions. The model shows strong agreement with high-fidelity MCNP reference models across various sample temperatures and for thicknesses where the correction factor remains below approximately 1.5.
+The verification exercises detailed in this chapter confirm that the SESH methodology for calculating the transmission correction factor, $C_T$, is accurate for a range of experimental conditions. The model shows strong agreement with high-fidelity MCNP reference models across various sample temperatures and for correction factors up to approximately $C_T \approx 1.5$. At larger correction factors a systematic discrepancy emerges that scales with the magnitude of $C_T$ itself, consistent with known differences between direct Monte Carlo sampling and probability table representations of URR cross-section fluctuations.
 
-A key investigation was the integration of the correction factor's derivative, $\partial C_T / \partial u$, into the fitting procedure. While the numerical estimation of this derivative via linear regression was shown to be statistically efficient, its impact on the final fitting results was found to be minimal. As shown in Table \ref{tab:fitting-error}, the improvement in the final $\chi^2/N$ when enabling the derivative calculation ($\partial C_T / \partial u = \text{ON}$) versus assuming it to be zero ($\partial C_T / \partial u = \text{OFF}$) is not substantial enough to justify the significant increase in computational time required for its calculation.
+A key investigation was the integration of the correction factor's derivative, $\partial C_T / \partial u$, into the fitting procedure. While the numerical estimation of this derivative via linear regression was shown to be statistically efficient, its impact on the final fitting results was found to be modest. As shown in \autoref{tab:fitting-error}, enabling the derivative yields a lower final $\chi^2/N$ ($1.981$ versus $2.444$), but the recovered parameters are comparable in both cases and both fits converge from a deliberately incorrect starting point. The improvement does not justify the significant increase in computational cost, particularly given that all previous self-shielding correction workflows have implicitly operated under the assumption $\partial C_T / \partial u = 0$.
 
-Furthermore, historical workflows for self-shielding correction have implicitly operated under the assumption that $\partial C_T / \partial u = 0$. This precedent makes it challenging to validate the derivative-enabled approach against previously published evaluations. Given the minor improvement in fit quality versus the major computational cost and the lack of validation pathways, the most practical and efficient approach for future evaluations is to proceed with the assumption that the derivative of the correction factor is zero. This simplification provides results that are sufficiently accurate and consistent with established methodologies.
+Given the minor improvement in fit quality versus the computational cost, the most practical approach for future evaluations is to proceed with $\partial C_T / \partial u = 0$ while fully recomputing $C_T$ at each iteration. This simplification is consistent with established methodologies and produces results that are sufficiently accurate for parameter recovery, as further demonstrated in the capture yield fitting verification (\autoref{chap:capture-yield-correction}) and the evaluation presented in \autoref{chap:evaluation}.

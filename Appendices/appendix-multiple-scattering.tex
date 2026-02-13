@@ -1,0 +1,240 @@
+\chapter{Multiple Scattering Monte Carlo Derivation}
+\label{app:multiple-scattering-derivation}
+
+This appendix provides the full mathematical derivation for the Monte Carlo multiple scattering simulation used to calculate the capture yield correction factor $C_C$ described in \autoref{sec:multiple-scattering}. The simulation tracks individual neutron histories through a cylindrical disc target of radius $R$, with front and rear faces located at $z=0$ and $z=n$ respectively, centered at $(x,y)=(0,0)$.
+
+\section{Initial Neutron State}
+\label{app:initial-neutron-state}
+
+A neutron is born at the energy of interest, $E^0$, and is incident on the front face of the target, with the location
+\begin{equation}
+    \label{eq:incident-neutron-location}
+    \overrightarrow{x}^0 = \begin{bmatrix}
+        x^0 \\
+        y^0 \\
+        z^0
+    \end{bmatrix} =
+    \begin{bmatrix} 
+        r_0\cos{\left( \theta_0 \right)} \\
+        r_0\sin{\left( \theta_0 \right)} \\
+        0
+    \end{bmatrix}
+\end{equation}
+where
+\begin{align*}
+    r_0 &= R\sqrt{\zeta}, \\
+    \theta_0 &= 2\pi\zeta,
+\end{align*}
+and $\zeta$ is a uniformly distributed random value between 0 and 1. The neutron is also traveling along the $z$-axis, and therefore is born with the direction vector
+\begin{equation}
+    \label{eq:incident-neutron-direction}
+    \overrightarrow{\Omega}^0 = \begin{bmatrix}
+        \Omega^0_u \\
+        \Omega^0_v \\
+        \Omega^0_w
+    \end{bmatrix} =
+    \begin{bmatrix}
+        0 \\
+        0 \\
+        1
+    \end{bmatrix}
+\end{equation}
+
+Cross sections are sampled at the energy $E^0$ according to the procedure described in \autoref{sec:mc-sampling-from-average-parameters}. These values are then used to produce the weighted average cross sections,
+\begin{align}
+    \label{eq:average-total-cross-section}
+    \overline{ \sigma_{t} }^{0} &= \sum_{j} \sigma_{t,j}^{0} \delta_{j} \\
+    \label{eq:average-capture-cross-section}
+    \overline{ \sigma_{\gamma} }^{0} &= \sum_{j} \sigma_{\gamma,j}^{0} \delta_{j} \\
+    \label{eq:average-scattering-cross-section}
+    \overline{ \sigma_{sc} }^{0} &= \sum_{j} \sigma_{sc,j}^{0} \delta_{j}
+\end{align}
+where $\overline{ \sigma_{t} }$, $\overline{ \sigma_{\gamma} }$, and $\overline{ \sigma_{sc} }$ are the weighted average total, capture, and scattering cross sections, respectively. The $0$ superscript indicates that the cross sections are taken at the energy $E^{0}$, i.e., before any scattering events have occurred. The terms $\sigma_{j}^0$ and $\delta_{j}$ are the microscopic cross section and relative abundance of the $j^{th}$ isotope, respectively.
+
+
+\section{Sampling the Interaction Location}
+\label{app:sampling-location}
+
+After each scattering event, the distance to leave the sample must be calculated. For a neutron that has undergone $k$ scattering events, with position vector $\overrightarrow{x}^k$ and direction $\overrightarrow{\Omega}^k$, the shortest path to exit the sample must be determined. For a cylindrical target, the neutron could escape through one of three surfaces:
+\begin{enumerate}
+    \item The front surface at $z=0$,
+    \item The rear surface at $z=n$, and
+    \item The cylindrical surface at $x^2 + y^2 = R^2$.
+\end{enumerate}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/InteractionSideDemo.pdf}
+    \caption{Example of the face intersection scheme, resulting in $d_{front}$ being selected as the shortest path until the particle exits.}
+    \label{fig:ms-face-intersection}
+\end{figure}
+The distances to the planar front and back faces ($d_{front}$ and $d_{back}$) are determined. A finite, positive distance is calculated only if the neutron's path is directed towards the face in question; otherwise, the distance is treated as infinite. Using $\Omega_w^k$ to denote the $z$-component of the direction vector $\overrightarrow{\Omega}^k$, the distances are:
+\begin{align}
+    d_{front} &= \begin{cases} -z^k / \Omega_w^k, & \text{if } \Omega_w^k < 0 \\ \infty, & \text{otherwise} \end{cases} \\
+    d_{back} &= \begin{cases} (n - z^k) / \Omega_w^k, & \text{if } \Omega_w^k > 0 \\ \infty, & \text{otherwise} \end{cases}
+\end{align}
+while $d_{cyl}$ is determined as
+\begin{equation}
+    \label{eq:cyl-intersection-distance}
+    d_{cyl} = \frac{\sqrt{b^2 + ac} - b}{a}
+\end{equation}
+where
+\begin{align}
+    a &= \left( \Omega_{u}^{k} \right)^2 + \left( \Omega_{v}^{k} \right)^2\\
+    b &= x^k \Omega_{u}^{k} + y^k\Omega_{v}^{k} \\
+    c &= R^2 - \left( x^k \right)^2 - \left( y^k \right)^2
+\end{align}
+
+The path length until the neutron escapes the sample, $d^k$, is the shortest of these three potential path lengths:
+\begin{equation}
+    d^k = \min{\left(d_{front}, d_{back}, d_{cyl}\right)}
+\end{equation}
+
+Next, a new set of total, capture, and elastic cross sections are sampled at energy $E^k$, which are then used to determine the sampled distance until the next collision,
+\begin{equation}
+    \label{eq:free-path-sampling}
+    s^k = -\frac{1}{\overline{\sigma_{t} }^{k} }  \ln{\left\{
+                1 - \zeta \left[ 1 - \exp{\left( -\overline{\sigma_{t}}^{k} d^k \right)} \right] 
+    \right\}}
+\end{equation}
+where $\zeta$ is a randomly selected value between 0 and 1. This distance term $s^{k}$ is then used to calculate the location of the next scattering event,
+\begin{equation}
+    \label{eq:sampling-new-location}
+    \overrightarrow{x}^{k+1} = \overrightarrow{x}^{k} + \overrightarrow{\Omega}^{k}s^{k}
+\end{equation}
+
+
+\section{Sampling the Post-Collision Energy}
+\label{app:sampling-energy}
+
+The energy at which the neutron leaves the scattering event, $E^{k+1}$, depends on the mass of the isotope with which it interacts and the scattering angle.
+
+To determine the target isotope, a weight for each isotope is computed from the scattering cross sections and abundances:
+\begin{equation}
+    w_{j} = \frac{\delta_j \sigma_{j,sc}^{k} }{\overline{\sigma_{sc}}^{k}}
+\end{equation}
+A cumulative weight is then constructed,
+\begin{equation}
+    W_j = \sum_{j} w_j
+\end{equation}
+which defines the probability window for the scattering event occurring on isotope $j$ as $(W_{j-1}, W_{j}]$. A random number $\zeta$ sampled between 0 and 1 determines the target isotope through the condition
+\begin{equation}
+    W_{j-1} < \zeta \leq W_{j}
+\end{equation}
+which selects a nucleus with mass $A_j$.
+
+The scattering angle is assumed to be isotropic in the center-of-mass frame, so the scattering angle $\phi^k$ is sampled as
+\begin{equation}
+    \phi^k = 2\pi\zeta
+\end{equation}
+The post-collision energy $E^{k+1}$ is then
+\begin{equation}
+    E^{k+1} = E^{k} \frac{A_j^{2} + 2A_{j}\cos{\left(\phi^{k}\right) + 1}}{\left( A_{j} + 1 \right)^2}
+\end{equation}
+
+
+\section{Sampling the Post-Collision Direction}
+\label{app:sampling-direction}
+
+The post-collision direction vector $\overrightarrow{\Omega}^{k+1}$ is determined from the pre-collision direction $\overrightarrow{\Omega}^{k}$ and the sampled scattering angles. The center-of-mass scattering angle $\theta^k$ is sampled uniformly in $[0,2\pi]$ and converted to the laboratory frame:
+\begin{align}
+    \cos{\theta'} &= \frac{1 + A_j \cos{\left( \theta^k \right)}}{\sqrt{1 + \left( A_j\right)^2 + 2A_j\cos{\left(\theta^k \right)}}} \\
+    \sin{\theta'} &= \sqrt{1 - \left( \cos{\theta'} \right)^2}
+\end{align}
+while the azimuthal angle is preserved: $\phi' = \phi$.
+
+The direction update proceeds according to
+\begin{equation}
+    \label{eq:direction-calculation-ms}
+    \overrightarrow{\Omega}^{k+1} = \begin{bmatrix}
+        \Omega^{k+1}_u \\[8pt]
+        \Omega^{k+1}_v \\[8pt]
+        \Omega^{k+1}_w
+    \end{bmatrix}
+    = \begin{bmatrix}
+        \frac{\Omega_{u}^{k} \Omega_{w}^{k}} { \sqrt{1 - \left(\Omega_{w}^{k}\right)^2 }} &
+        \frac{-\Omega_v^k} { \sqrt{1 - \left(\Omega_{w}^{k}\right)^2 }} &
+        \Omega_u^k \\[10pt]
+        \frac{\Omega_{v}^{k} \Omega_{w}^{k}} { \sqrt{1 - \left(\Omega_{w}^{k}\right)^2 }} &
+        \frac{\Omega_u^k} { \sqrt{1 - \left(\Omega_{w}^{k}\right)^2 }} &
+        \Omega_v^k \\[10pt]
+        -\sqrt{1 - \left(\Omega_{w}^{k}\right)^2} &
+        0 &
+        \Omega_w^k
+    \end{bmatrix} \times
+    \begin{bmatrix}
+        \sin{\theta'}\cos{\phi'} \\[8pt]
+        \sin{\theta'}\sin{\phi'} \\[8pt]
+        \cos{\theta'}
+    \end{bmatrix}
+\end{equation}
+In the degenerate case where $\left(\Omega_w^k\right)^2 = 1$, \autoref{eq:direction-calculation-ms} contains a division by zero. The direction update is instead computed as
+\begin{equation}
+        \overrightarrow{\Omega}^{k+1} = \begin{bmatrix}
+        \Omega^{k+1}_u \\[8pt]
+        \Omega^{k+1}_v \\[8pt]
+        \Omega^{k+1}_w
+    \end{bmatrix} = \Omega_w^k     \begin{bmatrix}
+        \sin{\theta'}\cos{\phi'} \\[8pt]
+        \sin{\theta'}\sin{\phi'} \\[8pt]
+        \cos{\theta'}
+    \end{bmatrix}
+\end{equation}
+With the post-collision position $\overrightarrow{x}^{k+1}$, direction $\overrightarrow{\Omega}^{k+1}$, and energy $E^{k+1}$ all determined, the simulation has the complete state needed to continue tracking through subsequent collisions.
+
+
+\section{Implicit Capture Weighting}
+\label{app:weighting-neutrons}
+
+The simulation employs an implicit capture (survival biasing) scheme to efficiently accumulate capture statistics without terminating neutron histories at each collision. At each collision $k$, the interaction fractions are computed from the sampled distance $s^{k}$ and cross sections:
+\begin{align}
+    \label{eq:tot-frac}
+    \gamma_{tot}^{k} &=  1 - \exp{ \left(-s^{k} \overline{\sigma_{t}}^{k} \right)} \\
+    \label{eq:el-frac}
+    \gamma_{sc}^{k} &= \gamma_{tot}^{k} \frac{\overline{\sigma_{sc}}^{k}} {\overline{\sigma_{t}}^{k}} \\
+    \label{eq:cap-frac}
+    \gamma_{cap}^{k} &= \gamma_{tot}^{k} \frac{\overline{\sigma_{\gamma}}^{k}}{\overline{\sigma_{t}}^{k}}
+\end{align}
+
+At each collision, the neutron is forced to scatter and its statistical weight is reduced by the scattering probability. The weight lost is tallied as the capture contribution. Starting with an initial weight $w^{0}=1$, the weight after the $k^{th}$ collision is:
+\begin{equation}
+    \label{eq:neutron-weight}
+    w^{k} = w^{k-1}\gamma_{sc}^{k}
+\end{equation}
+where $\gamma_{sc}^{k}$ is the scattering interaction fraction from \autoref{eq:el-frac}.
+
+A neutron history is terminated when its weight falls below a cutoff $\varepsilon$:
+\begin{equation}
+    \label{eq:collision-counter}
+    K = \min{ \left\{ k : w^{k} \leq \varepsilon \right\}}
+\end{equation}
+
+The total capture probability for a single neutron history is the sum of the weighted capture contributions over all collisions:
+\begin{equation}
+    \label{eq:capture-total-prob}
+     p = \sum_{k=1}^{K} w^{k-1}\gamma_{cap}^{k}
+\end{equation}
+
+
+\section{Assembling the Capture Correction Factor}
+\label{app:capture-correction-assembly}
+
+After simulating $N$ neutron histories, the energy-averaged capture probability and capture cross section are obtained as
+\begin{equation}
+    \label{eq:avg-capture-prob}
+    \langle p \rangle = \frac{1}{N} \sum_{i=1}^{N} p_{i}
+\end{equation}
+and
+\begin{equation}
+    \label{eq:avg-capture-xs}
+    \langle \overline{\sigma_{\gamma}} \rangle = \frac{1}{N} \sum_{i=1}^{N} \overline{\sigma_{\gamma}}^{0}_{i}
+\end{equation}
+where the subscript $i$ denotes quantities from the $i^{th}$ neutron history.
+
+The capture correction factor is then
+\begin{equation}
+    \label{eq:capture-correction-factor-calc}
+    C_{C} = \frac{\langle p \rangle }{\langle \overline{ \sigma_{\gamma} } \rangle n}
+\end{equation}
+which is used in conjunction with the thin-sample approximation (\autoref{eq:correction-thin-sample-approximation}) to estimate the energy-averaged capture yield $\langle Y \rangle$.
+
+It should be noted that $\langle \overline{\sigma_{\gamma}} \rangle$ computed via Monte Carlo simulation in \autoref{eq:avg-capture-xs} and $\langle \sigma_{\gamma} \rangle$ from \autoref{eq:correction-thin-sample-approximation} are not necessarily identical quantities; the former is a Monte Carlo estimate while the latter is calculated analytically.

@@ -1,303 +1,95 @@
+
 \section{Introduction}
 \label{sec:capture-yield-introduction}
 
-The self-shielding correction framework developed and validated for transmission measurements in \autoref{chap:transmission-correction} and \autoref{chap:multiiso-transmission-correction} is now extended to another critical experimental observable: capture yield. Accurately modeling capture yield in the unresolved resonance region (URR) requires accounting for two distinct physical phenomena. The first is the resonance self-shielding effect, driven by the statistical fluctuations in the microscopic cross section, which has been the primary focus of the preceding chapters. The second, which is particularly pronounced in capture experiments, is the effect of neutron multiple scattering within the measurement sample.
+The self-shielding correction framework developed and validated for transmission measurements in \autoref{chap:transmission-correction} and \autoref{chap:multiiso-transmission-correction} is now extended to another critical experimental observable: capture yield. In the idealized thin-sample limit (vanishing areal density), one often uses the heuristic identification $Y_\gamma(E)\approx n\,\sigma_\gamma(E)$, where $n$ is the areal density (atoms/barn). However, the directly observable capture yield divided by sample thickness cannot, in general, be equated to the capture cross section except in the limit of vanishing sample thickness; for practical thicknesses the yield is modified by self-shielding and by multiple scattering within the sample \cite{u238-differential-urr}.
 
-This chapter will not repeat the foundational discussion on the underlying physics of Monte Carlo cross-section generation and the statistical nature of resonance self-shielding, as these topics have been thoroughly described in \autoref{chap:implementation}, \autoref{chap:transmission-correction}, and \autoref{chap:multiiso-transmission-correction}. Instead, it will focus on the theoretical and implementation aspects unique to the capture yield correction. Specifically, this chapter details the physics of the multiple scattering correction, presents a verification of the physics model against a high-fidelity MCNP benchmark, and validates the integrated fitting procedure using synthetic data.
+Accurately modeling capture yield in the unresolved resonance region (URR) therefore requires accounting for two distinct physical phenomena. The first is resonance self-shielding, driven by statistical fluctuations in the microscopic cross section, which has been the primary focus of the preceding chapters. The second is the contribution of neutron \emph{multiple scattering within the measurement sample}, which can partially cancel self-shielding in some energy regions and dominate in others \cite{u238-differential-urr,Macklin1991_U238CaptureYield_AnnNuclEnergy}. Multiple scattering represents the contribution of neutrons that scatter 1 or more times \emph{within the sample} before being captured or escaping; each additional scattering requires the neutron to survive another collision without being absorbed, so stronger absorption reduces the probability of long multi-scatter paths \cite{Vineyard1954_MultipleScattering_PhysRev}. While other multiple-scattering-related effects can arise in complete capture-yield analyses, this work focuses specifically on the correction associated with neutron histories that undergo one or more scattering events \emph{inside the sample} prior to capture or escape \cite{Block2021_Cs133_TransmissionCapture_NSE}.
+
+This chapter will not repeat the foundational discussion of Monte Carlo cross-section generation or the statistical basis of resonance self-shielding, as these topics have been thoroughly described in \autoref{chap:implementation}, \autoref{chap:transmission-correction}, and \autoref{chap:multiiso-transmission-correction}. Instead, it documents the modernization of the existing capture-yield correction implementation, its verification against both experimental data and a comprehensive MCNP benchmark, and the integration of the corrected model into the SAMMY fitting workflow for use in parameter optimization.
 
 
-\section{Multiple Scattering in a Cylindrical Sample}
+\section{Multiple Scattering Correction}
 \label{sec:multiple-scattering}
 
-Multiple scattering is an effect which occurs in which a neutron is scattered one or more times before being captured in a sample. As the thickness of the sample increases, the probability of a scattered neutron experiencing a subsequent reaction (that being a capture or additional scattering events) also increases. Therefore, neutrons which undergo scattering events can end up miscounted as captures, artificially increasing the measured yield.
+Multiple scattering is an effect in which a neutron is scattered one or more times before being captured in a sample. As the thickness of the sample increases, the probability of a scattered neutron experiencing a subsequent reaction (capture or additional scattering) also increases. Neutrons which undergo scattering events can therefore be miscounted as captures, artificially increasing the measured yield.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/multiplescattering.png}
+    \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/multiple_scattering.pdf}
     \caption{Illustration of a neutron undergoing multiple scattering events, and getting miscounted as a capture event.}
     \label{fig:multiple-scattering-example}
 \end{figure}
 This is illustrated in \autoref{fig:multiple-scattering-example}, in which a neutron scatters twice before being captured.
 
-This correction is made with reference to the thin sample approximation,
+To quantify this effect, the measured yield is expressed relative to the idealized thin-sample result. The thin-sample approximation gives the capture yield as
 \begin{equation}
     \label{eq:thin-sample-approximation}
     \left\langle Y \right\rangle \approx n \left\langle \sigma_\gamma \right\rangle 
 \end{equation}
-where $\left\langle Y \right\rangle$ is the average yield, $n$ is the sample thickness, and $\left\langle \sigma_\gamma \right\rangle$ is the average capture cross section. The capture correction $C_C$ corrects the thin sample approximation such that
+where $\left\langle Y \right\rangle$ is the average yield, $n$ is the sample thickness, and $\left\langle \sigma_\gamma \right\rangle$ is the average capture cross section \cite{sesh}. The capture correction $C_C$ modifies the thin-sample approximation such that
 \begin{equation}
     \label{eq:correction-thin-sample-approximation}
     \left\langle Y \right\rangle = n \left\langle \sigma_\gamma \right\rangle C_C
 \end{equation}
+where $C_C$ accounts for both self-shielding and multiple scattering within the sample \cite{sesh,u238-differential-urr}.
 
-In order to calculate the correction, a series of Monte Carlo simulations are used to simulate a neutron undergoing a series of capture or scattering events in a cylindrical disc target. The target has a radius $R$, is parallel to the $z$ axis, and with front and rear faces located at $z=0$ and $z=n$, respectively, which are centered at $(x,y)=(0,0)$. A neutron is born at the energy of interest, $E^0$, and is incident on the front face of the target, with the location
-\begin{equation}
-    \label{eq:incident-neutron-location}
-    \overrightarrow{x}^0 = \begin{bmatrix}
-        x^0 \\
-        y^0 \\
-        z^0
-    \end{bmatrix} =
-    \begin{bmatrix} 
-        r_0\cos{\left( \theta_0 \right)} \\
-        r_0\sin{\left( \theta_0 \right)} \\
-        0
-    \end{bmatrix}
-\end{equation}
-where
-\begin{align*}
-    r_0 &= R\sqrt{\zeta}, \\
-    \theta_0 &= 2\pi\zeta,
-\end{align*}
-and $\zeta$ is a uniformly distributed random value between 0 and 1. The neutron is also traveling along the $z$-axis, and therefore is born with the direction vector
-\begin{equation}
-    \label{eq:incident-neutron-direction}
-    \overrightarrow{\Omega}^0 = \begin{bmatrix}
-        \Omega^0_u \\
-        \Omega^0_v \\
-        \Omega^0_w
-    \end{bmatrix} =
-    \begin{bmatrix}
-        0 \\
-        0 \\
-        1
-    \end{bmatrix}
-\end{equation}
 
-Cross sections are sampled at the energy $E^0$ according to the procedure described in \autoref{sec:mc-sampling-from-average-parameters}. These values are then used to produce the average cross-sections,
-\begin{align}
-    \label{eq:average-total-cross-section}
-    \overline{ \sigma_{t} }^{0} &= \sum_{j} \sigma_{t,j}^{0} \delta_{j} \\
-    \label{eq:average-capture-cross-section}
-    \overline{ \sigma_{\gamma} }^{0} &= \sum_{j} \sigma_{\gamma,j}^{0} \delta_{j} \\
-    \label{eq:average-scattering-cross-section}
-    \overline{ \sigma_{sc} }^{0} &= \sum_{j} \sigma_{sc,j}^{0} \delta_{j}
-\end{align}
-where $\overline{ \sigma_{t} }$, $\overline{ \sigma_{\gamma} }$, and $\overline{ \sigma_{sc} }$  are the weighted average total, capture, and scattering cross-sections respectively. The $0$ superscript indicates that the cross-sections are taken at the energy $E^{0}$, i.e., before any scattering events have occurred. The terms $\sigma_{j}^0$ and $\delta_{j}$ are the microscopic cross-section and relative abundance of the $j^{th}$ isotope, respectively.
+\subsection{Overview of the Monte Carlo Correction Procedure}
+\label{ssec:mc-correction-overview}
 
-\section{Scattering Events}
+The capture correction factor is obtained by a Monte Carlo simulation that tracks individual neutron histories through a cylindrical disc target. The full mathematical derivation, including all sampling formulas for position, energy, direction, and weighting, is provided in \autoref{app:multiple-scattering-derivation}. The essential features of the algorithm are summarized here.
 
-\subsection{Sampling Location}
-\label{ssec:sampling-location-ms}
-The distance to leave the sample is then calculated according to the shortest path to intersect with one of the surfaces in the direction in which the neutron is traveling. For the initial neutron, that is, before any scattering events have occurred, this is just the thickness of the sample $n$. However, for a scattering event this must be solved generally for a neutron that undergone $k$ scattering events. In this case, the neutron would have position vector $\overrightarrow{x}^k$ and direction $\overrightarrow{\Omega}^k$. The quantity that must be determined is the shortest path for it to leave the sample. In the case of a cylindrical target, there are three separate surfaces in which the neutron could escape:
-\begin{enumerate}
-    \item The front surface at $z=0$,
-    \item The rear surface at $z=n$, and
-    \item The cylindrical surface at $x^2 + y^2 = R^2$.
-\end{enumerate}
-Therefore, there are three distances that must be calculated:
-\begin{align*}
-    d_{front}   &\equiv \text{Distance neutron must travel to intersect with front face} \\
-    d_{back}    &\equiv \text{Distance neutron must travel to intersect with back face} \\
-    d_{cyl}     &\equiv \text{Distance neutron must travel to intersect with cylindrical surface}
-\end{align*}
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/InteractionSideDemo.pdf}
-    \caption{Example of the face intersection scheme, resulting in $d_{front}$ being selected as the shortest face until the particle exits.}
-    \label{fig:ms-face-intersection}
-\end{figure}
-The distances to the planar front and back faces ($d_{front}$ and $d_{back}$) are determined. A finite, positive distance is calculated only if the neutron's path is directed towards the face in question; otherwise, the distance is treated as infinite. Using $\Omega_w^k$ to denote the z-component of the direction vector $\overrightarrow{\Omega}^k$, the distances are:
-\begin{align}
-    d_{front} &= \begin{cases} -z^k / \Omega_w^k, & \text{if } \Omega_w^k < 0 \\ \infty, & \text{otherwise} \end{cases} \\
-    d_{back} &= \begin{cases} (n - z^k) / \Omega_w^k, & \text{if } \Omega_w^k > 0 \\ \infty, & \text{otherwise} \end{cases}
-\end{align}
-while $d_{cyl}$ is is determined as
-\begin{equation}
-    \label{eq:cyl-intersection-distance}
-    d_{cyl} = \frac{\sqrt{b^2 + ac} - b}{a}
-\end{equation}
-where
-\begin{align}
-    a &= \left( \Omega_{u}^{k} \right)^2 + \left( \Omega_{v}^{k} \right)^2\\
-    b &= x^k \Omega_{u}^{k} + y^k\Omega_{v}^{k} \\
-    c &= R^2 - \left( x^k \right)^2 - \left( y^k \right)^2
-\end{align}
+The simulation models a cylindrical sample of radius $R$ and thickness $n$, with a mono-directional neutron beam incident on the front face. For each history, a neutron enters the sample at a uniformly sampled location on the front face at the energy of interest $E^0$. Cross sections are sampled from the average parameters using the procedure described in \autoref{sec:mc-sampling-from-average-parameters}, and the abundance-weighted average total, capture, and scattering cross sections are computed for the material.
 
-The path length until the neutron escapes the sample, $d^k$, is the shortest of these three potential path lengths:
-\begin{equation}
-    d^k = \min{\left(d_{front}, d_{back}, d_{cyl}\right)}
-\end{equation}
+At each step, the simulation determines the shortest distance the neutron could travel before exiting through one of the three bounding surfaces (front face, rear face, or cylindrical wall), then samples a collision distance from the total cross section, conditioned on the constraint that the interaction must occur within the sample. If a collision occurs, the target isotope is selected probabilistically according to relative scattering cross sections and abundances, and the post-collision energy is determined from two-body kinematics assuming isotropic scattering in the center-of-mass frame. The neutron direction is updated via a standard rotation matrix transformation.
 
-Next, a new set of total, capture, and elastic cross sections are sampled at energy $E^k$, which are then used to determine the sampled distance until the next collision,
-\begin{equation}
-    \label{eq:free-path-sampling}
-    s^k = -\frac{1}{\overline{\sigma_{t} }^{k} }  \ln{\left\{
-                1 - \zeta \left[ 1 - \exp{\left( \overline{\sigma_{t}}^{k} d^k \right)} \right] 
-    \right\}}
-\end{equation}
-where $\zeta$ is a randomly selected value between 0 and 1. This distance term $s^{k}$ is then used to calculate the location of the next scattering event,
-\begin{equation}
-    \label{eq:sampling-new-location}
-    \overrightarrow{x}^{k+1} = \overrightarrow{x}^{k} + \Omega^{k}s^{k}
-\end{equation}
+Rather than terminating neutron histories by explicit capture or escape, the simulation uses an implicit capture (survival biasing) scheme \cite{mcnp}. At each collision, the neutron is forced to scatter, and its statistical weight is reduced by the ratio of the scattering-to-total interaction probability. The weight lost at each collision is tallied as the capture contribution, and the history continues until the neutron weight falls below a specified cutoff. The total capture probability for a single history is the cumulative sum of these weighted capture tallies across all collisions.
 
-\subsection{Sampling Energy}
-\label{ssec:sampling-energy-ms}
-The energy in which the neutron leaves the scattering event, i.e., $E^{k+1}$, must be determined. This introduces its own complication, as $E^{k+1}$ is dependent on the mass of the isotope it interacts with, along with its scattering angle. 
-
-First, addressing the mass dependency. This quantity must be sampled according to each isotopes calculated scattering cross section and their given abundances, as
-\begin{equation}
-    w_{j} = \frac{\delta_j \sigma_{j,sc}^{k} }{\overline{\sigma_{sc}}^{k}}
-\end{equation}
-This quantity is then used to calculate a cumulative weight, such that
-\begin{equation}
-    W_j = \sum_{j} w_j
-\end{equation}
-This defines the window of probability for the scattering event occurring on isotope $j$ as being between $(W_{j-1}, W_{j}]$.
-A random number $\zeta$ is sampled between 0 and 1, is used such that
-\begin{equation}
-    W_{j-1} < \zeta \leq W_{j}
-\end{equation}
-determines that the neutron will be sampled as scattering off a nucleus with the mass $A_j$.
-
-Next, addressing the angle dependency. The scattering angle is assumed to be isotropic, therefore can scatter with the angle $\phi$, determined as
-\begin{equation}
-    \phi^k = 2\pi\zeta
-\end{equation}
-Therefore, the energy $E^{k+1}$ is determined as
-\begin{equation}
-    E^{k+1} = E^{k} \frac{A_j^{2} + 2A_{j}\cos{\left(\phi^{k}\right) + 1}}{\left( A_{j} + 1 \right)^2}
-\end{equation}
-
-\subsection{Sampling Direction}
-\label{ssec:sampling-direction}
-The final component of determining the new parameters of a scattering event include calculating the direction the neutron is traveling, $\overrightarrow{\Omega}^{k+1}$. Similar to \autoref{ssec:sampling-energy-ms}, an angle $\theta^k$ must be sampled uniformly in the range $[0,2\pi]$. However $\theta$ must be converted from center of mass scale to lab scale, where
-\begin{align}
-    \cos{\theta'} &= \frac{1 + A_j \cos{\left( \theta^k \right)}}{\sqrt{1 + \left( A_j\right)^2 + 2A_j\cos{\left(\theta^k \right)}}} \\
-    \sin{\theta'} &= \sqrt{1 - \left( \cos{\theta'} \right)^2}
-\end{align}
-while $\phi=\phi'$.
-Determining $\overrightarrow{\Omega}^{k+1}$ from $\overrightarrow{\Omega}^{k}$, $\phi'$, and $\theta'$ proceed according to
-\begin{equation}
-    \label{eq:direction-calculation-ms}
-    \overrightarrow{\Omega}^{k+1} = \begin{bmatrix}
-        \Omega^{k+1}_u \\[8pt]
-        \Omega^{k+1}_v \\[8pt]
-        \Omega^{k+1}_w
-    \end{bmatrix}
-    = \begin{bmatrix}
-        \frac{\Omega_{u}^{k} \Omega_{v}^{k}} { \sqrt{1 - \left(\Omega_{w}^{k}\right)^2 }} &
-        \frac{-\Omega_v^k} { \sqrt{1 - \left(\Omega_{w}^{k}\right)^2 }} &
-        \Omega_u \\[10pt]
-        \frac{\Omega_{v}^{k} \Omega_{w}^{k}} { \sqrt{1 - \left(\Omega_{w}^{k}\right)^2 }} &
-        \frac{-\Omega_u^k} { \sqrt{1 - \left(\Omega_{w}^{k}\right)^2 }} &
-        \Omega_v \\[10pt]
-        \frac{-1} { \sqrt{1 - \left(\Omega_{w}^{k}\right)^2 }} &
-        0 &
-        \Omega_w
-    \end{bmatrix} \times
-    \begin{bmatrix}
-        \sin{\theta'}\cos{\phi'} \\[8pt]
-        \sin{\theta'}\sin{\phi'} \\[8pt]
-        \cos{\theta'}
-    \end{bmatrix}
-\end{equation}
-However, in the case where $\left(\Omega_w^k\right)^2 = 1$, \autoref{eq:direction-calculation-ms} cannot be used as it would divide by 0. Instead, the operation
-\begin{equation}
-        \overrightarrow{\Omega}^{k+1} = \begin{bmatrix}
-        \Omega^{k+1}_u \\[8pt]
-        \Omega^{k+1}_v \\[8pt]
-        \Omega^{k+1}_w
-    \end{bmatrix} = \Omega_w^k     \begin{bmatrix}
-        \sin{\theta'}\cos{\phi'} \\[8pt]
-        \sin{\theta'}\sin{\phi'} \\[8pt]
-        \cos{\theta'}
-    \end{bmatrix}
-\end{equation}
-is used instead. Finally, all the components required to sample the subsequent scattering event are obtained: $\overrightarrow{x}^{k+1}$, $\overrightarrow{\Omega}^{k+1}$, and $E^{k+1}$.
-
-\subsection{Weighting Neutrons}
-\label{ssec:killing-neutrons-ms}
-A calculation must be made to ensure that sufficient scattering events are being accounted for, but not so many scattering events that it is too computationally expensive, or unrealistic collision events bias the yield in some way.
-
-A weighted importance is used to determine the contribution of a particle to capture yield and when to consider the neutron sufficiently unimportant. This is the same calculation performed by default with MCNP\cite{mcnp}. 
-
-Given the sampled distance $s^{k}$,
-\begin{align}
-    \label{eq:tot-frac}
-    \gamma_{tot}^{k} &=  1 - \exp{ \left(-s^{k} \overline{\sigma_{t}}^{k} \right)} \\
-    \label{eq:el-frac}
-    \gamma_{sc}^{k} &= \gamma_{tot}^{k} \frac{\overline{\sigma_{sc}}^{k}} {\overline{\sigma_{t}}^{k}} \\
-    \label{eq:cap-frac}
-    \gamma_{cap}^{k} &= \gamma_{tot}^{k} \frac{\overline{\sigma_{\gamma}}^{k}}{\overline{\sigma_{t}}^{k}}
-\end{align}
-
-The simulation employs an implicit capture (or survival biasing) scheme. At each collision, the neutron is forced to scatter, and its statistical weight is reduced by the scattering probability. The "lost" weight is tallied as the capture contribution. Starting with an initial weight $w^{0}=1$, the weight after the $k^{th}$ collision is:
-\begin{equation}
-    \label{eq:neutron-weight}
-    w^{k} = w^{k-1}\gamma_{sc}^{k}
-\end{equation}
-where $\gamma_{sc}^{k}$ is the scattering interaction fraction from \autoref{eq:el-frac}.
-
-This quantity is used in two ways; first, the factor is used to determine the total number of collisions $K$ that a neutron will experience before it is no longer statistically significant. If the weight ends up less than some cutoff factor, $\varepsilon$, the total number of collisions is reached,
-\begin{equation}
-    \label{eq:collision-counter}
-    K = \min{ \left\{ k : w^{k} \leq \varepsilon \right\}}
-\end{equation}
-
-The second purpose of the weighting factor is to determine the total probability of capture after $K$ collisions for a single neutron history. The total probability of a neutron being captured is the sum of all weighted capture events until the collision $K$. The probability that a neutron will be captured at the $k^{th}$ collision is the product of the neutron's surviving weight from the previous collision times the capture interacting fraction $\gamma_{cap}^{k}$. This is given explicitly as
-\begin{equation}
-    \label{eq:capture-total-prob}
-     p = \sum_{k=1}^{K} w^{k-1}\gamma_{cap}^{k}
-\end{equation}
-
-\section{Calculating The Capture Correction Factor}
-\label{sec:capture-correction-factor}
-
-The two additional quantities required to calculate the capture correction factor are the energy averaged capture cross-section, $\langle \overline{\sigma_{\gamma}} \rangle$, and energy averaged capture probability, $\langle p \rangle$. These are obtained using the $p$ term from \autoref{eq:capture-total-prob}, and $\overline{\sigma_{\gamma}}^{0}$ from \autoref{eq:average-capture-cross-section}, as
-\begin{equation}
-    \label{eq:avg-capture-prob}
-    \langle p \rangle = \frac{1}{N} \sum_{i=1}^{N} p_{i}
-\end{equation}
-and
-\begin{equation}
-    \label{eq:avg-capture-xs}
-    \langle \overline{\sigma_{\gamma}} \rangle = \frac{1}{N} \sum_{i=1}^{N} \overline{\sigma_{\gamma}}^{0}_{i}
-\end{equation}
-where the sum is over $N$ total neutron histories. $p$ and $\overline{\sigma_{\gamma}}$ recieve the $i$ subscript to denote that their quantities refer to the $i^{th}$ neutron history.
-
-These quantities are then used to calculate the capture correction factor,
+After simulating $N$ histories, the capture correction factor is assembled as
 \begin{equation}
     \label{eq:capture-correction-factor-calc}
     C_{C} = \frac{\langle p \rangle }{\langle \overline{ \sigma_{\gamma} } \rangle n}
 \end{equation}
-which can then be used in \autoref{eq:correction-thin-sample-approximation} to estimate the energy averaged capture yield $\langle Y \rangle$. 
+where $\langle p \rangle$ is the history-averaged capture probability and $\langle \overline{\sigma_{\gamma}} \rangle$ is the history-averaged capture cross section from the Monte Carlo samples. It should be noted that $\langle \overline{\sigma_{\gamma}} \rangle$ computed by the Monte Carlo and $\langle \sigma_{\gamma} \rangle$ from \autoref{eq:correction-thin-sample-approximation} are not necessarily identical; the former is a stochastic estimate while the latter is calculated analytically.
 
-It should be noted that the average capture cross section $\langle \overline{\sigma_{\gamma}} \rangle$ calculated from \autoref{eq:avg-capture-xs} and $\langle \sigma_{\gamma} \rangle$ are not necessarily the same quantity. The $\langle \overline{\sigma_{\gamma}} \rangle$ is computed via Monte Carlo simulation, while $\langle \sigma_{\gamma} \rangle$ from \autoref{eq:correction-thin-sample-approximation} is calculated analytically.
 
 \section{SESH Improvements}
+\label{sec:sesh-improvements}
+
+Several issues in the original SESH implementation were identified during the course of this work that affected the accuracy of the capture correction factor. The most significant are documented here, along with their impact on the computed correction.
+
     \subsection{Energy Deposition Improvement}
-        Originally in SESH, there was a very simple approximation for sampling what energy an interaction occurred at. It was assumed that every neutron lost the average scattering energy per collision, independent of scattering angle, i.e.,
+        The original SESH code used a simplified approximation for post-collision energy sampling: every neutron was assumed to lose the average energy per collision, independent of the scattering angle \cite{sesh},
         \begin{equation}
             E' = E \left[ 1 - \frac{2A}{\left( 1 + A \right)^2} \right]
         \end{equation}
-        for all post-collision neutrons. This enabled all of the energy dependent parameters that did not get sampled using the Monte Carlo method to be pre-calculated efficiently. However, it was assumed this would be an insufficient approximation for thick samples in which many collisions were expected.
+        This enabled efficient pre-calculation of energy-dependent quantities that were not sampled by the Monte Carlo method. However, for thick samples where many collisions are expected, this approximation was judged to be insufficient.
         
-        This was substituted with an angle-dependent energy sampling procedure. The scattering angle of each post collision neutron would be sampled assuming an isotropic scattering distribution, and the post collision energy would be calculated as a function of the scattering angle,
+        The approximation was replaced with an angle-dependent energy sampling procedure. The scattering angle of each post-collision neutron is sampled assuming an isotropic distribution, and the post-collision energy is calculated as
         \begin{equation}
             E' = E \frac{A^2 + 2 A \mu_c + 1}{\left( A + 1 \right)^2}
         \end{equation}
-in which
+        where
         \begin{equation}
             \mu_c = \cos\phi_c
         \end{equation}
-        where $\phi_c$ is the exit angle of the post-collision neutron in the center-of-mass system.
+        and $\phi_c$ is the exit angle of the post-collision neutron in the center-of-mass system.
         \begin{figure}[H]
             \centering
             \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/multiple_scattering.png}
-            \caption{Distribution of neutrons after each collision using the old SESH post-collision energy sampling method and the new angle-dependent sampling in a 12mm \textsuperscript{181}Ta sample at 3keV initial incident energy.}
+            \caption{Distribution of neutrons after each collision using the original SESH post-collision energy sampling method and the new angle-dependent sampling in a 12~mm \textsuperscript{181}Ta sample at 3~keV initial incident energy.}
             \label{fig:multiple-scattering}
         \end{figure}
 
     \subsection{Incident Neutron Location Error}
 
-    SESH had an observed problem in which as the radius of the neutron beam size increased past some value relative to the total sample surface, it would fail at some point in the calculation. This ended up being attributable to an implementation error in algorithm for calculating the initial location for which the neutron is incident on the sample. Specifically, memory errors would be observed when $r_{sample}/r_{beam} \leq \sqrt{2}$.
+    An error was identified in which SESH would fail when the beam radius exceeded a certain fraction of the sample radius. This was traced to an implementation error in the algorithm for calculating the initial neutron incident location. Specifically, memory errors were observed when $r_{sample}/r_{beam} \leq \sqrt{2}$.
 
-    After some investigation, it was determined that the incident neutron location algorithm was implemented as
+    Investigation revealed that the incident neutron location algorithm had been implemented as
     \begin{align*}
         x &= R\sqrt{\zeta}, \qquad y=R\sqrt{\zeta} \\
     \end{align*}
-    Consequently, rather than the intended circular beam with uniform probability the distribution was a non-uniform, square beam. This was replaced with an improved sampling algorithm which correctly sampled across the face of the cylinder. A comparison between the original and improved algorithms is shown in \autoref{fig:loc-sampling-2d-comparison}.
+    Rather than producing the intended circular beam with uniform probability, this produced a non-uniform, square beam distribution. The algorithm was replaced with a corrected sampling procedure that uniformly samples across the face of the cylinder. A comparison between the original and improved algorithms is shown in \autoref{fig:loc-sampling-2d-comparison}.
 \begin{figure}[h]
     \centering
     \begin{subfigure}[c]{0.48\textwidth}
@@ -313,23 +105,23 @@ in which
         \subcaption{Improved Sampling Algorithm}
         \label{fig:loc-sampling-2d-improved}
     \end{subfigure}
-    \caption{Comparing the observed distribution of sampled neutron incident locations across the face of a cylindrical target from original SESH algorithm versus the new implementation}
+    \caption{Comparing the observed distribution of sampled neutron incident locations across the face of a cylindrical target from original SESH algorithm versus the new implementation.}
     \label{fig:loc-sampling-2d-comparison}
 \end{figure}
     
-    Not only was this a headache to deal with, but the non-uniform distribution had the potential to under-estimate the correction factor. Neutrons sampled as interacting closer to the edges are less likely to experience significant multiple scattering events.
+    Beyond causing runtime failures, the non-uniform distribution had the potential to underestimate the correction factor, since neutrons sampled as interacting closer to the edges are less likely to experience significant multiple scattering events.
 
     \begin{figure}[h]
         \centering
         \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/sampling_1d.pdf}
-        \caption{Comparison between improved and original algorithm regards to sampled radius}
+        \caption{Comparison between improved and original algorithm with respect to sampled radius.}
         \label{fig:sampling-1d-comparison}
     \end{figure}
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.75\textwidth]{Capture Yield/Figures/cc_improvements.png}
-    \caption{Improvements to the capture correction factor calculation in SESH compared to MCNP.}
+    \caption{Progressive improvement of the SESH capture correction factor for a 12~mm \textsuperscript{181}Ta cylindrical sample. Each curve adds a successive code improvement to the original SESH implementation, compared against the MCNP benchmark. The original SESH result diverges from MCNP above approximately 10~keV, with each correction reducing the discrepancy.}
         \label{fig:capture-improvements}
 \end{figure}
 
@@ -338,12 +130,12 @@ in which
 \section{Validation and Characterization of Multiple Scattering and Capture Yield}
 \label{sec:capture-yield-verification}
 
-With the theoretical framework for the multiple scattering correction established, it is essential to verify that the physics implemented in the SESH code is accurate. The primary objective of this section is to validate the core physics of the multiple scattering and capture yield algorithm. This is achieved by comparing the results from SESH against a high-fidelity benchmark, ensuring that the model can be trusted before it is integrated into the full fitting procedure. To avoid confounding issues discovered in previous chapters, a clean, single-isotope benchmark case is used.
+With the theoretical framework for the multiple scattering correction established, it is essential to verify that the physics implemented in the SESH code is accurate. The primary objective of this section is to validate the core physics of the multiple scattering and capture yield algorithm. This is achieved by comparing the results from SESH against a high-fidelity benchmark, ensuring that the model can be trusted before it is integrated into the full fitting procedure. To avoid confounding issues discovered in \autoref{chap:multiiso-transmission-correction}, a clean, single-isotope benchmark case is used.
 
 \subsection{Experimental Validation}
 \label{ssec:experimental-validation}
 
-To provide an initial validation of the capture-yield correction implementation, results are compared against the filtered-beam capture-yield measurements of McDermott \cite{McDermott2017Ta181}. That experiment used two \textsuperscript{181}Ta samples (99.95\% pure elemental tantalum) in the form of rectangular plates with lateral dimensions of approximately $10\ \mathrm{cm}\times 10\ \mathrm{cm}$ and thicknesses of $\sim 2$~mm and $\sim 6$~mm, enabling capture-yield measurements at discrete quasi-monoenergetic energies. \cite{McDermott2017Ta181}
+To provide an initial validation of the capture-yield correction implementation, results are compared against the filtered-beam capture-yield measurements of McDermott \cite{McDermott2017Ta181}. That experiment used two \textsuperscript{181}Ta samples (99.95\% pure elemental tantalum) in the form of rectangular plates with lateral dimensions of approximately $10\ \mathrm{cm}\times 10\ \mathrm{cm}$ and thicknesses of $\sim 2$~mm and $\sim 6$~mm, enabling capture-yield measurements at discrete quasi-monoenergetic energies.
 
 
 \begin{figure}[h!]
@@ -353,9 +145,9 @@ To provide an initial validation of the capture-yield correction implementation,
     \label{fig:mcdermott-yield-compare}
 \end{figure}
 
-The resultant simulated values are in strong agreement with the measurement, and nearly identical values to MCNP. This is an unsurprising result, since this measurement was used in the ENDF-8.1 \textsuperscript{181}Ta evaluation\cite{Brown2024}. The $6$~mm case shows that both MCNP and SAMMY slightly underpredict the measured yield. A slight disagreement is acceptable, since this was one of several experiments used in the evaluation\cite{Brown2019}, so a marginal disagreement is acceptable. The critical comparison is between the MCNP and SAMMY, for which SAMMY agrees very strongly.
+The simulated values are in strong agreement with the measurement, and nearly identical to MCNP. This is not unexpected, since this measurement was used in the ENDF-8.1 \textsuperscript{181}Ta evaluation\cite{Brown2024}. The 6~mm case shows that both MCNP and SAMMY slightly underpredict the measured yield, though a slight disagreement is acceptable since this was one of several experiments used in the evaluation\cite{Brown2019}. The critical comparison is between MCNP and SAMMY, for which SAMMY agrees very well.
 
-While the McDermott data provide a useful validation, it does not by itself isolate the performance of the multiple-scattering correction. The measurement is taken at a small number of discrete energies and in a fixed experimental geometry, so good agreement can occur even if compensating effects are present in the model. In particular, the experiment does not systematically vary the geometric drivers of the correction (beam size, sample radius, and thickness), which are exactly the quantities that control neutron path length and leakage. For that reason, a dedicated computational benchmark is used to characterize the correction factor across a controlled range of geometries and to identify where the SESH implementation begins to deviate.
+While the McDermott data provide a useful validation, they do not by themselves isolate the performance of the multiple-scattering correction. The measurement is taken at a small number of discrete energies and in a fixed experimental geometry, so good agreement can occur even if compensating effects are present in the model. In particular, the experiment does not systematically vary the geometric drivers of the correction (beam size, sample radius, and thickness), which are exactly the quantities that control neutron path length and leakage. For that reason, a dedicated computational benchmark is used to characterize the correction factor across a controlled range of geometries and to identify where the SESH implementation begins to deviate.
 
 \subsection{Validation Strategy}
 \label{ssec:capture-yield-validation-strategy}
@@ -420,7 +212,7 @@ The capture correction factor, $C_C$, calculated by the modernized SESH code was
 
 It should be stated that the most favorable case, in which the error does not exceed 0.5\%, is the most representative of typical capture yield experiments.
 
-A consistent feature visible in the relative error panels of \autoref{fig:cc-extreme-cases} is a localized deviation near incident neutron energies of approximately $6$--$10~\mathrm{keV}$. This structure coincides with the onset of the first inelastic scattering channel in \textsuperscript{181}Ta and is observed systematically across all tested geometries.
+A consistent feature visible in the relative error panels of \autoref{fig:cc-extreme-cases} is a localized deviation near incident neutron energies of approximately $6$--$10~\mathrm{keV}$. This structure coincides with the onset of the 6.237~keV inelastic scattering state in \textsuperscript{181}Ta and is observed systematically across all tested geometries.
 
 
 \begin{figure}[h!]
@@ -438,7 +230,7 @@ A consistent feature visible in the relative error panels of \autoref{fig:cc-ext
 \end{figure}
 
 
-\autoref{fig:rms-vs-radius} and \autoref{fig:rms-vs-thickness} help clarify which physical effects dominate the residual disagreement between SAMMY/SESH and MCNP. If the mismatch were primarily driven by multiple scattering within the sample volume, one would expect a strong dependence on sample radius, since increasing $R$ increases both the path length available for secondary interactions and the probability that scattered neutrons remain within the sample. Instead, the RMS error remains comparatively flat with respect to $R$ over the range tested (\autoref{fig:rms-vs-radius}), while showing a clearer increase with sample thickness (\autoref{fig:rms-vs-thickness}). This trend is more consistent with an error mechanism tied to boundary treatments rather than multiple-scattering. Increasing thickness increases the extent of the cylindrical sidewall, and the consequence of this is that any systematic differences in how the two codes treat the cylinder boundary are amplified. Consequently, the remaining discrepancies are attributed primarily to geometric edge handling at the cylinder wall, rather than deficiencies in the underlying multiple-scattering physics model as-implemented.
+\autoref{fig:rms-vs-radius} and \autoref{fig:rms-vs-thickness} help clarify which physical effects dominate the residual disagreement between SAMMY/SESH and MCNP. If the mismatch were primarily driven by multiple scattering within the sample volume, one would expect a strong dependence on sample radius, since increasing $R$ increases both the path length available for secondary interactions and the probability that scattered neutrons remain within the sample. Instead, the RMS error remains comparatively flat with respect to $R$ over the range tested (\autoref{fig:rms-vs-radius}), while showing a clearer increase with sample thickness (\autoref{fig:rms-vs-thickness}). This trend is more consistent with an error mechanism tied to boundary treatments rather than multiple scattering. Increasing thickness increases the extent of the cylindrical sidewall, and the consequence of this is that any systematic differences in how the two codes treat the cylinder boundary are amplified. Consequently, the remaining discrepancies are attributed primarily to geometric edge handling at the cylinder wall, rather than deficiencies in the underlying multiple-scattering physics model as implemented.
 
 \begin{figure}[h!]
     \centering
@@ -483,7 +275,7 @@ A consistent feature visible in the relative error panels of \autoref{fig:cc-ext
 
 \autoref{fig:rms-vs-eta} summarizes the sensitivity of the capture correction factor to the beam-to-sample radius ratio across representative sample geometries. For samples with sufficiently large radius, the RMS change in $C_C$ remains small and relatively flat over a wide range of $r_b/R$. This behavior is consistent across thin and moderately thick samples, supporting the conclusion that edge effects are weak when the cylindrical sidewall represents a small fraction of the total interaction surface.
 
-In contrast, the small-radius, thick-sample configuration shown in the lower-right panel exhibits a rapid growth in RMS deviation as $r_b/R$ approaches 1. This geometry is deliberately pathological. the combination of large thickness and small radius maximizes the relative contribution of the cylindrical sidewall, amplifying any algorithmic differences in how SAMMY/SESH and MCNP treat boundary crossings and near-surface transport. The emergence of large deviations only in this limit demonstrates that the underlying correction model remains robust for experimentally relevant sample dimensions, and that failure occurs only when edge-dominated geometries are pushed well beyond typical capture measurement conditions.
+In contrast, the small-radius, thick-sample configuration shown in the lower-right panel exhibits a rapid growth in RMS deviation as $r_b/R$ approaches 1. This geometry is deliberately pathological: the combination of large thickness and small radius maximizes the relative contribution of the cylindrical sidewall, amplifying any algorithmic differences in how SAMMY/SESH and MCNP treat boundary crossings and near-surface transport. The emergence of large deviations only in this limit demonstrates that the underlying correction model remains robust for experimentally relevant sample dimensions, and that failure occurs only when edge-dominated geometries are pushed well beyond typical capture measurement conditions.
 
 \subsection{Conclusion on Physics Model Validity}
 \label{ssec:conclusion-physics-model}
@@ -532,7 +324,10 @@ so that the corrected-yield derivative reduces to
     n\,C_C\,\frac{\partial \left\langle \sigma_\gamma \right\rangle}{\partial p}.
 \end{equation}
 
-This approximation is equivalent to treating the capture correction as a slowly varying multiplicative factor during parameter updates, while still fully recomputing $C_C$ at each iteration using the current parameter values. The validity of this approximation is assessed by a dedicated fitting verification test in \autoref{ssec:capture-yield-fitting-validation}.
+This approximation is equivalent to treating the capture correction as a slowly varying multiplicative factor during parameter updates, while still fully recomputing $C_C$ at each iteration using the current parameter values. The validity of this approximation is assessed by the fitting verification test in \autoref{ssec:capture-yield-fitting-validation}.
+
+\subsection{Coupling of Radiative Widths}
+\label{ssec:legacy-gamma-coupling}
 
 During initial capture-yield fitting tests, the optimization failed to respond as expected when varying the average radiative width associated with higher-$\ell$ capture channels. This was traced to a legacy constraint in the original SAMMY URR implementation: although the input format permits $\ell$-dependent average radiative widths, only the lowest-$\ell$ value is consumed by the URR reader and it is reused when a higher-$\ell$ radiative width is required\cite{sammy}.
 
@@ -555,11 +350,7 @@ To ensure that the Jacobian is consistent with the implemented model, any update
 \end{equation}
 since the coupling in \autoref{eq:urr-gamma-width-coupling} implies $\partial \langle \Gamma_\gamma \rangle_{\ell=0} / \partial \langle \Gamma_\gamma \rangle_{\ell=2} = 1$.
 
-
-This identification is widely treated as a valid practical constraint and is consistent with previous evaluations of average radiative widths\cite{CarlsonEscherHussein2014,atlas,Mughabghab2011,Brown2024}.
-
-The validity of this approximation is assessed by a dedicated fitting verification test in \autoref{ssec:capture-yield-fitting-validation}.
-
+This constraint is derived from the assumption that radiative widths only depend on parity, and consequently, only two independent $\Gamma_{\gamma}$ values can exist \cite{SIRAKOV20081223}. This assumption is widely treated as a valid practical constraint and is consistent with previous evaluations of average radiative widths\cite{CarlsonEscherHussein2014,atlas,Mughabghab2011,Brown2024}.
 
 \subsection{Verification of the Integrated Fitting Procedure}
 \label{ssec:capture-yield-fitting-validation}
@@ -597,9 +388,9 @@ The fitted average radiative widths are close to the ENDF/B-VIII.1 values despit
 The residual difference between the fitted and evaluated $\ell=0$ width is not unexpected in this validation, as previously mentioned due to the highly restricted fit regime. The fit was intentionally restricted to $E<6.1$~keV with a pencil beam and the largest sample radius in order to avoid known model discrepancies identified in the characterization. While this restriction isolates the fitting workflow from those model differences, it also limits the amount of information available to distinguish the effects of the $\ell=0$ and $\ell=1$ widths using capture-yield data alone. Within that limited domain, the fit results indicate that the workflow is functioning as intended and produces parameter values that are broadly consistent with the evaluation, even when started from significantly perturbed inputs.
 
 
-\subsection{Conclusion}
-\label{ssec:capture-yield-conclusion}
+\section{Conclusion}
+\label{sec:capture-yield-conclusion}
 
 This chapter presented a modernized capture-yield correction capability and validated it against both experiment and high-fidelity Monte Carlo. Comparisons to the $^{181}$Ta capture-yield measurements of McDermott show strong agreement in the unresolved resonance region, with results that closely track MCNP. A broader MCNP benchmark study was then used to characterize the correction factor across thickness and geometric variations, confirming that the implementation reproduces the expected behavior and remains accurate over the range of configurations representative of capture-yield experiments.
 
-Small, localized discrepancies were observed near the onset of the first inelastic channel in $^{181}$Ta and in edge-dominated geometries. These effects define practical limits of applicability rather than indicating a failure of the underlying correction model, and they motivate the restricted validation domain used for the fitting tests. Within that domain, the capture-yield correction was successfully integrated into the SAMMY fitting workflow, including simultaneous fitting of multiple sample thicknesses and the legacy coupled-$\ell$ radiative-width treatment. Overall, the results demonstrate that the method is suitable for use in evaluations which utilize capture-yield measurements of self-shielded, thick samples with the correction applied dynamically during optimization.
+Small, localized discrepancies were observed near the onset of the first inelastic 6.237~keV channel in $^{181}$Ta\cite{ta-181-inelastic} and in edge-dominated geometries. These effects define practical limits of applicability rather than indicating a failure of the underlying correction model, and they motivate the restricted validation domain used for the fitting tests. Within that domain, the capture-yield correction was successfully integrated into the SAMMY fitting workflow, including simultaneous fitting of multiple sample thicknesses and the legacy coupled-$\ell$ radiative-width treatment. Overall, the results demonstrate that the method is suitable for use in evaluations which utilize capture-yield measurements of self-shielded, thick samples with the correction applied dynamically during optimization.
