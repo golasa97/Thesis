@@ -5,11 +5,11 @@ Previously, evaluating URR data was a tedious, manual cycle, requiring the evalu
     \overline{\sigma} = -\frac{1}{n} \ln{ \langle T \rangle}
 \end{equation}
 where $n$ is the atomic thickness of the sample in atoms/barn. As discussed in the introduction, this derived quantity is not the true average cross section but rather a self-shielded cross section that depends on experimental conditions (sample thickness, temperature, composition, etc.) and needed to be corrected before fitting with SAMMY.
-This was converted into the \textit{true} average cross section by use of the correction factor calculated from SESH, which was then fit with SAMMY.
+This was converted into the \textit{true} average total cross section $\langle \sigma_t \rangle$ by use of the correction factor calculated from SESH, which was then fit with SAMMY.
 
-Once new parameters were obtained, they were used to calculate a new correction factor. This was then used to obtain a new `corrected' cross section, and a new fit was performed, producing new resonance parameters. This process was repeated until the resonance parameters converged onto a final value.
+Once new URR parameters were obtained, they were used to calculate a new correction factor. This was then used to obtain a new corrected cross section, and a new fit was performed, producing new resonance parameters. This process was repeated until the resonance parameters converged onto a final value, which was typically achieved within approximately three iterations.
 
-The implementation described in the following sections integrates the self-shielding correction capabilities of SESH directly into SAMMY’s fitting engine. This creates a new, streamlined workflow where the evaluator provides the actual measurement data—such as average transmission or capture yield—directly to the code. SAMMY now internally calculates the necessary self-shielding correction factors during each iteration, directly comparing the theoretical values to the experimental observable. The new and improved workflow is shown in \autoref{fig:current-workflow}.
+The implementation described in the following sections integrates the self-shielding correction capabilities of SESH directly into SAMMY's fitting engine. This creates a new, streamlined workflow where the evaluator provides the actual measurement data (such as average transmission $\langle T \rangle$ or average capture yield $\langle Y \rangle$) directly to the code. The average capture yield is the energy-averaged ratio of detected capture events to incident neutrons, and is subject to self-shielding effects analogous to those in transmission. The treatment of average capture yield is performed in \autoref{chap:capture-yield-correction}. SAMMY now internally calculates the necessary self-shielding correction factors during each iteration and applies them to the theoretical calculation, rather than requiring the evaluator to correct the experimental data externally. The new and improved workflow is shown in \autoref{fig:current-workflow}.
 \begin{figure}[h]
     \centering
     \includegraphics[width=1\linewidth]{Implementation/Figures/ImprovedWorkflow.pdf}
@@ -52,6 +52,22 @@ where $k_c$, $g_c$, and $\phi_c$ are the neutron wave number, statistical spin f
 \end{itemize}
 
 The parameters that distinguish this average cross section from a simple energy average of resolved resonance region cross sections are the distant-level parameter $R^\infty_c$ and the strength function $\widetilde{S}_c$. Together with the s-wave average level spacing $D_0$, these constitute the set of URR parameters that SAMMY uses to describe the average cross section. These are defined on an $\ell$-basis (i.e., $S_\ell$, $R_\ell^\infty$) and are the parameters that are either input by the evaluator or varied during the fitting process.
+
+While $D_0$ does not appear explicitly in the average total cross section (\autoref{eq:hauser-feshbach-cross-section}), it enters the formalism through the non-elastic partial cross sections. The energy-averaged partial cross section for an incident channel $a$ and exit channel $b$ can be written as a product of the Hauser-Feshbach compound nucleus term and a width fluctuation correction\cite{Moldauer1980}:
+\begin{equation}
+    \label{eq:partial-cross-section}
+    \langle \sigma_{ab} \rangle = \frac{\pi g_a}{k_a^2}\, \frac{T_a T_b}{T} \int_0^\infty dt\; e^{-i T_\gamma t / T} \prod_{c \notin \gamma} \left( 1 + \frac{2\, T_c}{\nu_c\, T}\, t \right)^{-\nu_c/2 - \delta_{ac} - \delta_{bc}}
+\end{equation}
+where the quantities to the left of the integral sign constitute the Hauser-Feshbach expression, and the integral is the Moldauer prescription\cite{Moldauer1976} for the width fluctuation correction factor. Here $a$ represents the incident channel and $b$ the exit channel; $\nu_c$ and $T_c$ represent the number of degrees of freedom (multiplicity) and the transmission coefficient, respectively, for channel $c$. Subscript $\gamma$ refers to photon channels, and $T = \sum_c T_c$ is defined as the sum over all channels.
+
+For neutron channels, $T_c$ is determined by the strength function $S_\ell$ and the distant-level parameter $R_\ell^\infty$, the same quantities that appear in the average total cross section. For photon and fission channels, however, the channel probabilities for a given spin $J$ are\cite{Moldauer1980}:
+\begin{equation}
+    \label{eq:photon-transmission}
+    T_\gamma = 2\pi\, \frac{\langle \Gamma_\gamma \rangle}{D_J} \qquad \text{and} \qquad T_f = 2\pi\, \frac{\langle \Gamma_f \rangle}{D_J}
+\end{equation}
+where $D_J$ is the mean level spacing for levels with spin $J$, obtained from $D_0$ via a nuclear level density model as described in \autoref{ssec:level-density}. It is through these channel probabilities that $D_0$ enters the calculation of partial cross sections.
+
+The parameter $D_0$ is not varied during the SAMMY fitting process; it is determined from analysis of the resolved resonance region and is provided as a fixed input by the evaluator. Consequently, the parameters that SAMMY adjusts during fitting are the strength functions $S_\ell$, the distant-level parameters $R_\ell^\infty$, and the average radiative width $\langle \Gamma_\gamma \rangle$.
 
 
 \section{Converting Optical Model Parameters to Statistical Resonance Parameters}
@@ -129,7 +145,7 @@ The parameters that distinguish this average cross section from a simple energy 
         
         The energy dependence of $D_0$ itself is also accounted for using the Gilbert-Cameron level density model\cite{gc-leveldensity}. This aspect already matched SAMMY's existing implementation and was therefore left unchanged.
 
-        The validation of this model was done by comparing the new calculated level densities with the new \textsuperscript{181}Ta evaluation from ENDF-8.1\cite{endf-8.1}.
+        The validation of this model was done by comparing the new SESH-calculated level spacings with those from the \textsuperscript{181}Ta evaluation in ENDF-8.1\cite{endf-8.1}. The ENDF-8.1 evaluation stores $J$-dependent level spacings that were computed by SAMMY using its implementation of the Bethe formula during the evaluation process. These level spacings are tabulated in the ENDF File~2 resonance parameter data. The purpose of this comparison is therefore to verify that SESH's new implementation of the Bethe formula (\autoref{eq:bethe-formula}) produces $J$-dependent level spacings consistent with SAMMY's implementation, ensuring that the two codes are using the same underlying physics model.
 
         \begin{figure}[H]
             \centering
@@ -140,7 +156,7 @@ The parameters that distinguish this average cross section from a simple energy 
             \label{fig:level=spacing=validation}
         \end{figure}
 
-        As shown in \autoref{fig:level=spacing=validation}, the results from the improved level density formula now correctly match the $^{181}$Ta evaluation. While the simpler model in \autoref{eq:simple-j-dependency} approximates the level spacing adequately for s-wave channels, the two formulas diverge at higher $\ell$ values where the spin cutoff parameter plays a larger role. Implementing the Bethe formula (\autoref{eq:bethe-formula}) resolves these approximations.
+        As shown in \autoref{fig:level=spacing=validation}, the level spacings calculated by the updated SESH implementation now agree with the SAMMY-produced values stored in the ENDF-8.1 evaluation across all spin groups and energies. While the simpler model in \autoref{eq:simple-j-dependency} approximates the level spacing adequately for s-wave channels, the two formulas diverge at higher $\ell$ values where the spin cutoff parameter plays a larger role. Implementing the Bethe formula (\autoref{eq:bethe-formula}) resolves these discrepancies and ensures consistency between SESH and SAMMY.
 
     \subsection{Converting Strength Functions to Average Neutron Widths}
     \label{ssec:neutron-widths}
@@ -164,9 +180,14 @@ The parameters that distinguish this average cross section from a simple energy 
                 \quad\quad\:\:\:\displaystyle\rho & \ell=0,\\[12pt]
                 \quad\:\:\displaystyle\frac{\rho^3}{1 + \rho^2} & \ell=1,\\[12pt]
                 \displaystyle\frac{\rho^5}{9 + 3\rho^2 + \rho^4} & \ell=2
-                %&\displaystyle\frac{\rho^7}{225 + 45\rho^2 + 6\rho^4 + \rho^6} & \ell=3
             \end{cases}
         \end{equation}
+        For $\ell > 2$, the penetrability, shift factor, and phase shift are computed using the standard recursive relations\cite{Blatt1952}\cite{Lane1958}:
+        \begin{align}
+            P_\ell &= \frac{\rho^2\, P_{\ell-1}}{(\ell - \mathcal{S}_{\ell-1})^2 + P_{\ell-1}^2} \label{eq:pen-recursion} \\[6pt]
+            \mathcal{S}_\ell &= \frac{\rho^2\, (\ell - \mathcal{S}_{\ell-1})}{(\ell - \mathcal{S}_{\ell-1})^2 + P_{\ell-1}^2} - \ell \label{eq:shift-recursion}
+        \end{align}
+        where $P_\ell$ is the penetrability and $\mathcal{S}_\ell$ is the shift factor (not to be confused with the strength function $S_\ell$), with the initial values $P_0 = \rho$ and $\mathcal{S}_0 = 0$. For $\ell \leq 2$, these recursions reduce to the explicit forms in \autoref{eq:penetration-factor}. In practice, evaluations in ENDF-8.1 rarely include more than three partial waves ($\ell \leq 2$), but the recursion is implemented to handle arbitrary $\ell$ values for generality.
 
         The parameter $\rho$ is the dimensionless channel radius parameter, defined as
         \begin{equation}
@@ -204,9 +225,14 @@ The parameters that distinguish this average cross section from a simple energy 
             \hat{\rho} & \ell=0,\\[12pt]
             \hat{\rho} - \arctan{\hat{\rho}} & \ell=1,\\[12pt]
             \displaystyle\hat{\rho} - \arctan{\frac{3\hat{\rho}}{3 - \hat{\rho}^2} } & \ell=2\\[12pt]
-            %\displaystyle{\hat{\rho} - \arctan{\frac{15\hat{\rho} - \hat{\rho}^3}{15 - 6\hat{\rho}^2} } }  & \text{if}\quad \ell=3\[14pt]
         \end{cases}
     \end{equation}
+        For $\ell > 2$, the phase shift is computed using the same recursion used for the penetrability and shift factors (\autoref{eq:pen-recursion}--\autoref{eq:shift-recursion}):
+        \begin{equation}
+            \label{eq:phase-recursion}
+            \phi_\ell = \phi_{\ell-1} - \arctan{\frac{P_{\ell-1}}{\ell - \mathcal{S}_{\ell-1}}}
+        \end{equation}
+        with $\phi_0 = \hat{\rho}$, where $P_{\ell-1}$ and $\mathcal{S}_{\ell-1}$ are evaluated using $\hat{\rho}$ in place of $\rho$. As noted in \autoref{ssec:neutron-widths}, the explicit forms given above are sufficient for the vast majority of current ENDF evaluations.
 
         The parameter $\hat{\rho}$ is defined analogously to $\rho$ (\autoref{eq:channel-radius-param}), but uses the effective scattering radius $R'_\ell$ in place of the channel radius $a_c$:
         \begin{equation}
@@ -233,6 +259,8 @@ The parameters that distinguish this average cross section from a simple energy 
 With all channel-dependent parameters established by the conversions in the preceding sections, the Monte Carlo sampling procedure outlined conceptually in \autoref{sec:sampling-parameters} can now be stated concretely. The goal is to generate an ensemble of cross-section realizations $\{\sigma_1, \sigma_2, \ldots, \sigma_N\}$ from which the correction factor $C_T$ is computed.
 
 This procedure rests on two assumptions about the energy bin over which $\langle \sigma \rangle$ is defined. First, the bin must be wide enough to contain a statistically meaningful number of resonances, so that the sampled ensemble accurately represents the distribution of cross-section values within the bin. Second, the bin must be narrow enough that all slowly varying energy-dependent quantities (e.g., the potential scattering cross section, the penetrability factors, and the average resonance parameters themselves) can be treated as constant across the bin. Under these conditions, each sampled realization uses the same values of $\sigma_p$, $V_\ell$, $D_J$, and $\langle \Gamma_{n,J}^\ell \rangle$, and only the stochastically sampled resonance parameters ($E_r$, $\Gamma_{n,r}$) vary between realizations. These are the defining conditions of the idealized URR: average parameters are purely statistical, and the self-shielding correction depends only on the variance they produce. The consequences of violating these assumptions (particularly the finite-resonance effect that arises when the bin contains too few resonances) are partially addressed in \autoref{chap:uncertainty}.
+
+The second assumption merits further justification. In principle, one could sample resonance energies first and then evaluate the energy-dependent average parameters ($D_J(E)$, $\langle \Gamma_{n,J}^\ell \rangle(E)$, etc.)\ at each sampled resonance energy. However, as described in \autoref{sec:weighted-wigner-validation}, SESH does not build a full resonance ladder across the entire URR; instead, it samples only a small number of resonance pairs in the immediate vicinity of the energy of interest using the weighted Wigner distribution. The verification in \autoref{chap:transmission-correction} demonstrates that approximately four resonance pairs per channel are sufficient to reproduce the full-ladder correction factor. This means the sampled resonances span a range of roughly $4 D_J$ in energy around the point of interest. Over such a narrow interval, the average resonance parameters vary negligibly. For example, in the $J=3$, $\ell=0$ channel of \textsuperscript{181}Ta\cite{endf-8.1}, the level spacing is approximately 9~eV, so four level spacings span roughly 36~eV. Over this range the level spacing changes by less than 0.1\% at any energy in the URR, and the reduced neutron width varies by a comparable amount. Evaluating the energy dependence of the average parameters at each sampled resonance energy would therefore require repeated calls to the level density model and penetrability calculations for a correction that is negligible compared to the dominant source of cross-section variance, namely the Porter-Thomas fluctuations in neutron width.
 
 For each realization $i$, the following steps are performed for every channel $c_j = (J_j, \ell_j, \mu_j)$ in the channel list (\autoref{eq:channel-list}):
 
@@ -281,8 +309,9 @@ As described in the preceding section, generating a statistical resonance ladder
 To circumvent this inefficiency, only the resonances directly around the energy of interest are sampled. The issue with doing this is that a neutron is proportionally more likely to fall into a wider level spacing than a narrow one, assuming that neutrons are distributed uniformly across all observed resonances. To address this, Fr\"{o}hner\cite{jeff18} developed a weighted sampling scheme to sample level spacings weighted by their size, which can be represented as:
 \begin{equation}
     \label{eq:weighted-wigner}
-    P_{weighted}(s) = \frac{s \cdot P(s)}{\displaystyle\int_0^\infty s' \cdot P(s') ds'}
+    P_{weighted}(s) = \frac{s \cdot P(s)}{\displaystyle\int_0^\infty s' \cdot P(s')\, ds'}
 \end{equation}
+where $P(s)$ is the Wigner distribution defined in \autoref{eq:wigner-distribution}. The numerator weights each spacing by its size $s$, and the denominator normalizes the distribution. This weighting ensures that the probability of sampling a given spacing is proportional to both its Wigner probability and its width, correctly accounting for the fact that a uniformly distributed neutron energy is more likely to fall within a wider spacing.
 
 In order to validate Fr\"{o}hner's implementation of \autoref{eq:weighted-wigner}, a sequence of $10^7$ resonances was built,
 \begin{equation}

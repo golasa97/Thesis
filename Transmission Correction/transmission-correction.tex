@@ -182,7 +182,7 @@ To solve this, a numerical approach was implemented. For a given parameter $u$ (
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeEstimationExample.png}
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/ct_vs_u_replotted_with_S0_topaxis.pdf}
     \caption{Estimation of $\partial C_T / \partial u$ for $S_0$ at 3~keV using linear regression on the jointly sampled $(S_0, C_T)$ pairs. The slope of the best-fit line provides the derivative estimate.}
     \label{fig:ct-derivative-regression}
 \end{figure}
@@ -191,14 +191,14 @@ The advantage of the regression approach over finite differences is quantified i
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeEstimation.png}
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeEstimation.pdf}
     \caption{Comparison of derivative estimate distributions from the linear regression and finite difference methods at 3~keV for \textsuperscript{181}Ta, illustrating the lower variance achieved by the regression approach for the same number of Monte Carlo histories.}
     \label{fig:ct-derivative-variance}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeMethod.png}
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DerivativeMethod.pdf}
     \caption{Variance of the derivative estimate as a function of the total number of Monte Carlo histories for both the linear regression and finite difference methods. The regression method converges more rapidly, achieving the same precision with fewer histories.}
     \label{fig:derivative-variance-reduction}
 \end{figure}
@@ -216,7 +216,7 @@ The fitted transmission curves for both cases are compared against the synthetic
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DCtFittingPerformance.png}
+    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/DCtFittingPerformance.pdf}
     \caption{Fitted self-shielded transmission compared to the synthetic MCNP data for $^{181}$Ta. Results are shown for both the derivative-enabled ($\partial C_T / \partial u \neq 0$) and derivative-free ($\partial C_T / \partial u = 0$) fitting modes.}
     \label{fig:fitting-comparison}
 \end{figure}

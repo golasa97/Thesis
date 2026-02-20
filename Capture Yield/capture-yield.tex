@@ -76,7 +76,7 @@ Several issues in the original SESH implementation were identified during the co
         and $\phi_c$ is the exit angle of the post-collision neutron in the center-of-mass system.
         \begin{figure}[H]
             \centering
-            \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/multiple_scattering.png}
+            \includegraphics[width=0.75\linewidth]{Capture Yield/Figures/correct_energy_loss.pdf}
             \caption{Distribution of neutrons after each collision using the original SESH post-collision energy sampling method and the new angle-dependent sampling in a 12~mm \textsuperscript{181}Ta sample at 3~keV initial incident energy.}
             \label{fig:multiple-scattering}
         \end{figure}
@@ -120,7 +120,7 @@ Several issues in the original SESH implementation were identified during the co
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.75\textwidth]{Capture Yield/Figures/cc_improvements.png}
+    \includegraphics[width=0.75\textwidth]{Capture Yield/Figures/cc_improvements.pdf}
     \caption{Progressive improvement of the SESH capture correction factor for a 12~mm \textsuperscript{181}Ta cylindrical sample. Each curve adds a successive code improvement to the original SESH implementation, compared against the MCNP benchmark. The original SESH result diverges from MCNP above approximately 10~keV, with each correction reducing the discrepancy.}
         \label{fig:capture-improvements}
 \end{figure}

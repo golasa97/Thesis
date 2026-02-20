@@ -33,7 +33,7 @@ This dampening was confirmed by computing the transmission correction factor for
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/multiiso_transmission_dampening.png}
+    \includegraphics[width=0.75\linewidth]{Multi Isotope/Figures/multiiso_v5.pdf}
     \caption{Transmission correction factor for a 3~cm sample of $^{90}$Zr/$^{92}$Zr as a function of $^{90}$Zr enrichment, computed with MCNP. The correction factor first decreases as $^{92}$Zr resonances are diluted, reaches a minimum, and then increases as $^{90}$Zr resonance fluctuations begin to dominate the mixture's variance.}
     \label{fig:transmission-dampening}
 \end{figure}
@@ -58,7 +58,7 @@ To create a controlled comparison, a set of ``quasi-Zr'' ENDF files was generate
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/quasi-zr-totxs.png}
+    \includegraphics[width=0.75\linewidth]{Multi Isotope/Figures/quasi-zr-totxs.pdf}
     \caption{Comparison of the original ENDF/B-VIII.1 File~3 total cross section for $^{90}$Zr (dashed) with the recalculated File~3 derived from the File~2 average resonance parameters (solid). The two differ because the original File~3 was based on measured natural cross-section data rather than on the statistical model in File~2.}
     \label{fig:quasi-zr-comparison}
 \end{figure}
@@ -70,7 +70,7 @@ With a consistent set of ENDF files established, the multi-isotope self-shieldin
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/zr-discrepancy.png}
+    \includegraphics[width=0.75\linewidth]{Multi Isotope/Figures/zr-discrepancy.pdf}
     \caption{Initial comparison of the transmission correction factor for a 10~cm natural Zr sample, showing the systematic overestimation by SAMMY relative to the MCNP benchmark. Both calculations use the same quasi-Zr ENDF files with consistent File~2 and File~3 data.}
     \label{fig:zr-discrepancy}
 \end{figure}
@@ -121,7 +121,7 @@ The effect of this normalization on the sampled cross-section distribution is il
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\linewidth]{Transmission Correction/Figures/zr90-ptable-scaling.png}
+    \includegraphics[width=0.85\linewidth]{Multi Isotope/Figures/zr90-ptables.pdf}
     \caption{Sampled cross-section distribution for $^{90}$Zr at 200~keV before and after \texttt{LSSF=1} normalization. The multiplicative rescaling $\sigma_j^{(\times)} = f_j \langle \sigma \rangle$ enforces the File~3 mean but simultaneously distorts the variance of the distribution by the factor $(\langle \sigma \rangle / \mu)^2$.}
     \label{fig:zr-ptable-scaling}
 \end{figure}
@@ -137,7 +137,7 @@ This establishes two conclusions. First, the SAMMY multi-isotope self-shielding 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/variance-comparison.png}
+    \includegraphics[width=0.75\linewidth]{Multi Isotope/Figures/variance-comparison-2.pdf}
     \caption{Transmission correction factor for a 5.15~cm $^{90}$Zr sample computed using four combinations of sampling source (SAMMY vs.\ NJOY) and transmission calculation method (direct averaging vs.\ probability tables). The two sampling sources agree when the same calculation method is used; the discrepancy arises solely from the probability table normalization.}
     \label{fig:variance-comparison}
 \end{figure}
@@ -160,7 +160,7 @@ The fitted curves are compared against the synthetic data in \autoref{fig:multi-
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{Transmission Correction/Figures/multi-isotope-fit.png}
+    \includegraphics[width=0.75\linewidth]{Multi Isotope/Figures/multi-isotope-fit.pdf}
     \caption{Simultaneous fit to synthetic natural Zr data: average total cross section and 4~cm self-shielded transmission. The solid curves show the converged fit; the prior (starting from deliberately incorrect parameters) is shown for comparison. The fit recovers both datasets from an initial $\chi^2/N$ of 7598 to a final value of 0.697.}
     \label{fig:multi-isotope-fitting-validation}
 \end{figure}
@@ -198,16 +198,16 @@ The new framework also propagates uncertainties from experimental conditions ---
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[b]{0.45\textwidth}
+    \begin{subfigure}[b]{0.35\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{Multi Isotope/Figures/old_code.png}
+        \includegraphics[width=\textwidth]{Multi Isotope/Figures/OriginalCode.pdf}
         \caption{Original URR code architecture, characterized by tangled dependencies and shared global state.}
         \label{fig:old-codemap}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[b]{0.45\textwidth}
+    \begin{subfigure}[b]{0.55\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{Multi Isotope/Figures/new_code.png}
+        \includegraphics[width=\textwidth]{Multi Isotope/Figures/RefactoredCode.pdf}
         \caption{Refactored architecture with modular components and well-defined interfaces, integrated into the \texttt{fitAPI} framework.}
         \label{fig:new-codemap}
     \end{subfigure}
