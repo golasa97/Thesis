@@ -3,27 +3,35 @@
 
 Zirconium and its isotopes are significant materials in nuclear engineering, frequently used as cladding for nuclear fuel rods and in structural components within reactor cores due to their low thermal neutron absorption cross-section and high resistance to corrosion. Accurate nuclear data for Zirconium isotopes is therefore critical for the safe and efficient design and operation of nuclear reactors. However, existing nuclear data evaluations for Zirconium, particularly in the unresolved resonance region (URR), exhibit several known deficiencies.
 
-A prominent issue is the failure of the current ENDF/B-VIII.1 evaluations to properly model isotopic data. As shown in \autoref{fig:eval_deficiency_structure}, the evaluations are using infinitely dilute cross-sections (File 3 data) derived from natural Zirconium measurements, which are then applied incorrectly to isotopic evaluations. This leads to non-physical artifacts, such as the propagation of resonant structures unique to $^{90}$Zr into the evaluation for $^{91}$Zr, where no such structure is experimentally observed.
+A prominent issue is the failure of the current ENDF/B-VIII.1 evaluations to properly model isotopic data. As shown in \autoref{fig:eval_deficiency_structure}, the evaluations are using infinitely dilute cross-sections (File 3 data) derived from natural Zirconium measurements, which are then applied incorrectly to isotopic evaluations\cite{SETH1965306, osti_10132931}. This leads to non-physical artifacts, such as the propagation of resonant structures unique to $^{90}$Zr into the evaluation for $^{91}$Zr, where no such structure is experimentally observed.
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/motivation-discreps-pars.png}
+    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/motivation-discreps-pars.pdf}
     \caption{Comparison of enriched transmission measurements (Musgrove, Green) against calculations based on the ENDF/B-VIII.1 evaluation, highlighting mismatches in the URR.}
     \label{fig:eval_deficiency_structure}
 \end{figure}
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/motivation-discreps-experiment.png}
-    \caption{Comparison of enriched transmission measurements (Musgrove, Green) against calculations based on the ENDF/B-VIII.0 evaluation, highlighting mismatches in the URR that drive the present re-evaluation.}
+    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/motivation-discreps-experiment.pdf}
+    \caption{Comparison of enriched transmission measurements (Musgrove, Green) against calculations based on the ENDF/B-VIII.1 evaluation, highlighting mismatches in the URR that drive the present re-evaluation.}
     \label{fig:eval_deficiency_file2}
 \end{figure}
 
-A further deficiency observed in \autoref{fig:eval_deficiency_file2} is the significant deviation between theoretical cross-sections calculated from $^{91}$Zr URR parameters and experiment. Paradoxically, the natural zirconium data appears to be better represented by the current evaluation than the isotopic data. This is a symptom of compensating errors between the individual isotopic evaluations. This situation is unphysical and indicates that the current File 2 parameters do not accurately represent the isotopic behavior when considered individually.
+A further deficiency observed in \autoref{fig:eval_deficiency_file2} is the significant deviation between theoretical cross-sections calculated from $^{91}$Zr URR parameters and experiment. Paradoxically, the natural zirconium data appears to be better represented by the current evaluation than the isotopic data. This is a symptom of compensating errors between the individual isotopic evaluations. This situation is unphysical and indicates that the current File 2 parameters do not accurately represent the isotopic behavior when considered individually.  When self-shielded transmission data are converted to infinitely dilute cross sections without accounting for self-shielding, the resulting cross sections are systematically underestimated.
 
 Additionally, a key deficiency is the un-represented intermediate structure in the p-wave neutron cross-section of $^{90}$Zr. This non-statistical effect, often attributed to a doorway state mechanism, is a known feature of the cross-section that is not captured by the statistical treatment of the URR in current evaluations. This omission, combined with the other issues, leads to inaccuracies in reactor physics calculations that are sensitive to the detailed resonance structure.
 
 This work aims to address these deficiencies by performing a new evaluation of the URR for $^{90}$Zr and $^{91}$Zr. The primary objectives of this evaluation are threefold. First, it serves as a practical application of the advanced self-shielding correction and fitting methodologies developed in the preceding chapters. This includes the direct fitting of experimental transmission data without pre-processing, made possible by the integration of the SESH code into SAMMY. Second, the evaluation seeks to produce a more physically accurate and defensible set of average resonance parameters for both $^{90}$Zr and $^{91}$Zr by leveraging these new tools. Finally, a key goal is the explicit characterization of the intermediate structure in $^{90}$Zr and the derivation of more realistic parameter uncertainties by propagating the model uncertainty associated with the self-shielding correction.
+
+The evaluation procedure proceeds in several stages. First, the experimental datasets are prepared: pointwise transmission and cross-section measurements are binned onto an energy grid that preserves the intermediate structure in $^{90}$Zr while maintaining sufficient resonance statistics per bin, and the finite-resonance-effect self-shielding uncertainty is computed for each bin using the Monte Carlo methodology from Chapter~\ref{chap:uncertainty}. This model uncertainty is combined in quadrature with the reported experimental uncertainties to define the total uncertainty used in fitting.
+
+Next, the initial URR parameters are determined. The concurrent RRR evaluation by Siemers et al.\ \cite{GregEvaluationInProgress} provides the statistical properties of the resolved resonances (level spacings, strength functions, radiation widths, and distant-level parameters) that serve as starting values for the URR fit. For $^{90}$Zr, the intermediate structure is characterized via autocorrelation analysis and a doorway state model is fitted to the observed structure, with the distant-level parameters adjusted to accommodate the smooth doorway contributions.
+
+With the data prepared and initial parameters established, the fitAPI code performs a simultaneous $\chi^2$ minimization across all datasets, including enriched transmission, natural transmission, total cross-section, and capture cross-section measurements, fitting the compound nucleus URR parameters while holding the doorway state contributions fixed. The fitted parameters and their covariances are then propagated to evaluated total and capture cross sections on the evaluation energy grid.
+
+Finally, the evaluation is validated by comparing the resulting cross sections directly against ENDF/B-VIII.1 and by computing self-shielded transmission on a fine energy grid for each experimental configuration, which is compared against equivalent MCNP simulations using the ENDF/B-VIII.1 probability tables. This provides a direct, observable-level assessment of whether the new evaluation improves agreement with the experimental data. The following sections detail each of these stages and present the resulting evaluation.
 
 \section{Methodology}
 \label{sec:eval_methodology}
@@ -31,7 +39,7 @@ This work aims to address these deficiencies by performing a new evaluation of t
 \subsection{Data Selection and Fitting Strategy}
 \label{ssec:eval_data_selection}
 
-A comprehensive URR evaluation requires both high-quality experimental data and a fitting strategy that leverages the distinct sensitivities of different measurement types. The primary experimental constraints come from transmission and total cross-section measurements, which provide the strongest sensitivity to the URR parameters governing elastic scattering. The key datasets are summarized in \autoref{tab:datasets}.
+A comprehensive URR evaluation requires both high-quality experimental data and a fitting strategy that leverages the distinct sensitivities of different measurement types. The primary experimental constraints come from transmission and total cross-section measurements, which provide the strongest sensitivity to the URR parameters governing elastic scattering. Both enriched isotopic samples and natural zirconium samples are used in the fit, each contributing complementary information. The key datasets are summarized in \autoref{tab:datasets}.
 
 \begin{table}[h!]
     \centering
@@ -47,14 +55,15 @@ A comprehensive URR evaluation requires both high-quality experimental data and 
         Macklin (1963) \cite{macklin1963}            & $^{90}$Zr & Capture XS   & Pointwise data at 0.030 MeV \\
         Musgrove (1977) \cite{musgrove1977neutron91} & $^{91}$Zr & Transmission & 89.2\% enriched \\
         Ohgama (2005) \cite{ohgama2005measurement}   & $^{91}$Zr & Capture XS   & [0.02, 0.550] MeV range \\
-        Gan (2024) \cite{gan2024}                    & $^{91}$Zr & Capture XS   & [0.026, 0.177] MeV range \\
+        Rapp (2019) \cite{rapp2019}                  & $^{\mathrm{nat}}$Zr & Transmission & Natural, 6~cm sample \\
+        Rapp (2019) \cite{rapp2019}                  & $^{\mathrm{nat}}$Zr & Transmission & Natural, 10~cm sample \\
         \hline
     \end{tabular}
 \end{table}
 
-A significant challenge in this evaluation is the limited availability of experimental capture cross-section data for zirconium isotopes in the URR. While capture data would provide direct sensitivity to the average radiation width $\langle\Gamma_\gamma\rangle$, the scarcity of such measurements---particularly for $^{90}$Zr above 800~keV---means that the radiation width is poorly constrained and must be extrapolated from resolved resonance region (RRR) values.
+A significant challenge in this evaluation is the limited availability of experimental capture cross-section data for zirconium isotopes in the URR. While capture data would provide direct sensitivity to the average radiation width $\langle\Gamma_\gamma\rangle$, the scarcity of such measurements, particularly for $^{90}$Zr above 800~keV, means that the radiation width is poorly constrained and must be extrapolated from resolved resonance region (RRR) values.
 
-A key methodological contribution of this work is the simultaneous fitting of multiple measurement types, each with distinct parameter sensitivities. Total cross-section measurements are sensitive to the sum of all partial cross sections and provide strong constraints on the strength functions $S_\ell$ and the potential scattering radius $R_0^\infty$. Transmission measurements on thick samples exhibit pronounced self-shielding effects, which are primarily driven by the strength function, helping to break the strong correlation between $S_0$ and $R_0^\infty$ that plagues fits to thin-sample or infinitely-dilute data alone. Transmission measurements on thin samples, conversely, experience weaker self-shielding and are therefore more sensitive to the background (potential scattering) component of the cross section determined by $R_0^\infty$. Capture cross-section measurements provide direct sensitivity to $\langle\Gamma_\gamma\rangle$, though such data are scarce in the URR for these isotopes. Finally, the use of enriched versus natural sample measurements allows isotopic contributions to be constrained independently, avoiding the compensating errors that can arise when fitting natural elemental data alone. By fitting all available data types simultaneously, the evaluation exploits these complementary sensitivities to achieve a more robust and physically consistent parameter determination than would be possible from any single dataset.
+A key methodological choice in this work is the simultaneous fitting of multiple measurement types within a single optimization. By fitting enriched transmission, natural transmission, total cross-section, and capture cross-section data together, the evaluation exploits the distinct parameter sensitivities of each observable to achieve a more robust parameter determination than would be possible from any single dataset. The physical basis for these complementary sensitivities is discussed in \autoref{ssec:eval_discussion_advances}.
 
 The fitting strategy also employs a hybrid approach depending on the energy region. Below the URR lower boundary (i.e., below 800~keV for $^{90}$Zr and below 220~keV for $^{91}$Zr), the resolved resonance evaluation provides a well-characterized cross section. To ensure continuity at the RRR/URR interface, the URR parameters are constrained to reproduce the pointwise cross section from the RRR evaluation, averaged into 50~keV energy bins. Above the URR lower boundary, where individual resonances can no longer be resolved, the fit is constrained directly by experimental transmission and cross-section measurements. This hybrid strategy ensures that the URR parameters simultaneously satisfy two critical requirements: consistency with the well-characterized resolved region at lower energies, and accurate reproduction of experimental observables throughout the URR.
 
@@ -105,22 +114,21 @@ The resulting prior parameters are summarized in \autoref{tab:prior_parameters}.
     \end{tabular}
 \end{table}
 
-Notably, the p-wave strength function for both isotopes is significantly larger than the s-wave, which is characteristic of the zirconium mass region where the 3p giant resonance produces enhanced p-wave neutron absorption. This large p-wave contribution is a dominant feature in the URR cross sections and must be accurately modeled.
-
+Notably, the p-wave strength function for both isotopes is significantly larger than the s-wave, which is characteristic of the zirconium mass region\cite{atlas}. 
 
 \subsection{Data Binning Strategy}
 \label{ssec:eval_binning}
 
 The selection of an appropriate energy binning scheme is a critical step in URR analysis, as it directly impacts the validity of the self-shielding correction factors and the resulting model uncertainty. As discussed in Chapter~\ref{chap:uncertainty}, the ideal energy bin must satisfy two competing requirements: it must be wide enough to contain a statistically meaningful number of resonances, yet narrow enough that the average resonance parameters can be assumed constant across its energy range.
 
-For an isotope like $^{90}$Zr, with an average s-wave level spacing of approximately 8.3~keV, satisfying both conditions is challenging. To achieve a truly statistical sample of, for example, 200 resonances per bin would require a bin width of about 1.6~MeV---far too wide to assume constant average parameters, especially given the presence of intermediate structure. Conversely, bins narrow enough to resolve the intermediate structure contain only a few resonances each.
+For an isotope like $^{90}$Zr, with an average s-wave level spacing of approximately 8.3~keV, satisfying both conditions is challenging. To achieve a truly statistical sample of, for example, 200 resonances per bin would require a bin width of about 1.6~MeV, far too wide to assume constant average parameters, especially given the presence of intermediate structure. Conversely, bins narrow enough to resolve the intermediate structure contain only a few resonances each.
 
-Rather than using fixed-width bins, the energy bins were chosen to be as wide as possible while still preserving the shape of the intermediate structure in the cross-section data. In practice, this means narrower bins were used in energy regions where the cross section varies rapidly---such as near the doorway state peaks in $^{90}$Zr---and wider bins in regions where the cross section is relatively smooth. A minimum bin width of 40~keV was enforced to ensure a reasonable number of resonances per bin, with a maximum width of 100--200~keV depending on the energy region.
+Rather than using fixed-width bins, the energy bins were chosen to be as wide as possible while still preserving the shape of the intermediate structure in the cross-section data. In practice, this means narrower bins were used in energy regions where the cross section varies rapidly, such as near the doorway state peaks in $^{90}$Zr, and wider bins in regions where the cross section is relatively smooth. A minimum bin width of 40~keV was enforced to ensure a reasonable number of resonances per bin, with a maximum width of 100--200~keV depending on the energy region.
 
 \subsection{Intermediate Structure in $^{90}$Zr}
 \label{ssec:eval_intermediate_structure}
 
-A distinctive feature of the $^{90}$Zr neutron cross section is the presence of intermediate structure---broad enhancements spanning several hundred keV that cannot be explained by the statistical fluctuations of individual compound nucleus resonances. This structure has long been attributed to doorway state mechanisms \cite{musgrove1977neutron90, divadeenam1972neutron}. Properly accounting for this intermediate structure is essential for accurate URR evaluation, as it represents a significant departure from the purely statistical behavior assumed by conventional average cross-section formalisms.
+A distinctive feature of the $^{90}$Zr neutron cross section is the presence of intermediate structure: broad enhancements spanning several hundred keV that cannot be explained by the statistical fluctuations of individual compound nucleus resonances. This structure has long been attributed to doorway state mechanisms \cite{musgrove1977neutron90, divadeenam1972neutron}. Properly accounting for this intermediate structure is essential for accurate URR evaluation, as it represents a significant departure from the purely statistical behavior assumed by conventional average cross-section formalisms.
 
 Importantly, this intermediate structure phenomenon is unique to $^{90}$Zr among the stable zirconium isotopes. The $^{90}$Zr nucleus has a closed neutron shell at $N = 50$, which creates favorable conditions for the observation of doorway state effects. As discussed by Feshbach et al.\ \cite{feshbach1967doorway}, the reduced density of compound nuclear levels near closed shells means that doorway states are less strongly damped and their resonant structure is more likely to be experimentally observable. In contrast, $^{91}$Zr ($N = 51$) has one neutron outside the closed shell, leading to higher level densities and stronger damping that washes out the intermediate structure. Consequently, the doorway state treatment described in this section applies only to $^{90}$Zr; the $^{91}$Zr evaluation uses conventional energy-independent URR parameters.
 
@@ -152,11 +160,11 @@ measures the variance of the cross section relative to a running average compute
     \label{fig:eval_autocorrelation}
 \end{figure}
 
-The autocorrelation result shown in \autoref{fig:eval_autocorrelation} demonstrates structure persisting at energy scales of several hundred keV---far larger than the $\sim$8~keV average s-wave level spacing for $^{90}$Zr. Specifically, $C(\Delta)$ rises sharply from zero and exhibits several overlapping peaks at $\Delta \approx 150$~keV, $\approx 275$~keV, and $\approx 350$~keV, indicating that multiple distinct intermediate states contribute to the observed cross-section structure. The persistence of these features at energy scales two orders of magnitude larger than the average level spacing confirms that the broad enhancements visible in the cross-section data are not statistical artifacts but represent a coherent, non-resonant modulation of the average cross section. This quantitative confirmation of significant intermediate structure motivated a targeted investigation of its physical origin, which led to the theoretical doorway state framework described below.
+The autocorrelation result shown in \autoref{fig:eval_autocorrelation} demonstrates structure persisting at energy scales of several hundred keV, far larger than the $\sim$8~keV average s-wave level spacing for $^{90}$Zr. Specifically, $C(\Delta)$ rises sharply from zero and exhibits several overlapping peaks at $\Delta \approx 150$~keV, $\approx 275$~keV, and $\approx 350$~keV, indicating that multiple distinct intermediate states contribute to the observed cross-section structure. The persistence of these features at energy scales two orders of magnitude larger than the average level spacing confirms that the broad enhancements visible in the cross-section data are not statistical artifacts but represent a coherent, non-resonant modulation of the average cross section. This quantitative confirmation of significant intermediate structure motivated a targeted investigation of its physical origin, which led to the theoretical doorway state framework described below.
 
-A critical distinction must be made between resonant structure that contributes to self-shielding fluctuations and smooth intermediate structure that does not. The intermediate structure observed in $^{90}$Zr represents a smooth, energy-dependent enhancement of the average strength function rather than additional discrete resonances. The autocorrelation analysis confirms that this structure varies on energy scales ($\sim$100--300~keV) that are larger than the averaging intervals used in URR calculations. Consequently, the doorway state contribution appears as a slowly-varying baseline that shifts the mean cross section but does not contribute additional variance to the resonance fluctuations within each energy bin. This distinction has important practical consequences: the doorway state enhancement increases the average cross section (and thus the average self-shielding), but the \emph{fluctuation} in self-shielding---which determines the model uncertainty quantified in \autoref{ssec:eval_ct_uncertainty}---remains governed by the compound nucleus resonance statistics.
+A critical distinction must be made between resonant structure that contributes to self-shielding fluctuations and smooth intermediate structure that does not. The intermediate structure observed in $^{90}$Zr represents a smooth, energy-dependent enhancement of the average strength function rather than additional discrete resonances. The autocorrelation analysis confirms that this structure varies on energy scales ($\sim$100--300~keV) that are larger than the averaging intervals used in URR calculations. Consequently, the doorway state contribution appears as a slowly-varying baseline that shifts the mean cross section but does not contribute additional variance to the resonance fluctuations within each energy bin. This distinction has important practical consequences: the doorway state enhancement increases the average cross section (and thus the average self-shielding), but the \emph{fluctuation} in self-shielding, which determines the model uncertainty quantified in \autoref{ssec:eval_ct_uncertainty}, remains governed by the compound nucleus resonance statistics.
 
-A survey of the literature on intermediate structure in the zirconium region identified shell-model calculations by Divadeenam et al.\ \cite{divadeenam1972neutron} that predict multiple two-particle--one-hole (2p-1h) doorway states for the $^{91}$Zr compound nucleus, with both s-wave ($1/2^+$) and p-wave ($1/2^-$) contributions. The broader theoretical framework for such phenomena was established by Feshbach, Kerman, and Lemmer \cite{feshbach1967doorway}, who showed that doorway states---relatively simple configurations through which the incident particle must pass to form the fully equilibrated compound nucleus---can produce resonant structure in the energy-averaged cross section.
+A survey of the literature on intermediate structure in the zirconium region identified shell-model calculations by Divadeenam et al.\ \cite{divadeenam1972neutron} that predict multiple two-particle--one-hole (2p-1h) doorway states for the $^{91}$Zr compound nucleus, with both s-wave ($1/2^+$) and p-wave ($1/2^-$) contributions. The broader theoretical framework for such phenomena was established by Feshbach, Kerman, and Lemmer \cite{feshbach1967doorway}, who showed that doorway states, relatively simple configurations through which the incident particle must pass to form the fully equilibrated compound nucleus, can produce resonant structure in the energy-averaged cross section.
 
 Following the formalism of Ref.~\cite{feshbach1967doorway}, the contribution of multiple doorway states to the strength function takes the form:
 \begin{equation}
@@ -169,7 +177,7 @@ where the sum runs over all doorway states $d$ of angular momentum $\ell$, $E_d$
     \label{eq:total_strength}
 \end{equation}
 
-Because the doorway state contributions represent smooth enhancements to the cross section---analogous to the role of the distant-level parameter $R_\ell^\infty$ in contributing to the potential scattering background---the $R_\ell^\infty$ parameters were allowed to vary during the fit to properly accommodate the combined smooth contributions from both sources.
+Because the doorway state contributions represent smooth enhancements to the cross section, analogous to the role of the distant-level parameter $R_\ell^\infty$ in contributing to the potential scattering background, the $R_\ell^\infty$ parameters were allowed to vary during the fit to properly accommodate the combined smooth contributions from both sources.
 
 The doorway state energies $E_d$ and escape widths $\Gamma^\uparrow_d$ were taken from the shell-model calculations of Divadeenam et al.\ \cite{divadeenam1972neutron}, with small adjustments to the energies (within the theoretical uncertainties) to better match the observed peak positions in the experimental data. The spreading widths $\Gamma^\downarrow_d$ were then determined by fitting to the transmission data while holding the compound nucleus strength functions fixed at their values derived from the resolved resonance region.
 
@@ -202,9 +210,7 @@ Seven p-wave ($1/2^-$) and three s-wave ($1/2^+$) doorway states were included i
     \end{tabular}
 \end{table}
 
-The dominant contributions come from the p-wave doorways at 0.529, 0.700, and 0.860~MeV, which together account for the broad cross-section enhancement observed in the experimental data. States with fitted spreading widths at the upper bound (600~keV) are either very broad or poorly constrained by the available data. The fitted distant-level parameters were $R^\infty_0 = 0.162$ and $R^\infty_1 = -0.095$.
-
-
+The dominant contributions come from the p-wave doorways at 0.529, 0.700, and 0.860~MeV, which together account for the broad cross-section enhancement observed in the experimental data. States with fitted spreading widths at the upper bound (600~keV) are either very broad or poorly constrained by the available data. The adjusted distant-level parameters from this doorway fit were $R^\infty_0 = 0.162$ and $R^\infty_1 = -0.095$; these values served as the initial parameters for the subsequent compound nucleus parameter fit described in \autoref{ssec:eval_fitting}.
 
 \begin{figure}[h!]
     \centering
@@ -226,27 +232,16 @@ The impact of including the intermediate structure model is illustrated in Figur
 \subsection{Self-Shielding Uncertainty from Finite-Resonance Effects}
 \label{ssec:eval_ct_uncertainty}
 
-As discussed in Chapter~\ref{chap:uncertainty}, self-shielding corrections in the URR exhibit an additional source of uncertainty because a finite resonance ladder cannot fully represent the ensemble implied by the average parameters. For the Zr transmission measurements considered here, this finite-resonance effect is quantified using the Monte Carlo methodology developed in that chapter: thousands of statistically consistent resonance ladders are sampled, each is propagated through the transmission correction workflow, and the resulting spread in $C_T$ is treated as a model-uncertainty contribution.
+The finite-resonance self-shielding uncertainty developed in Chapter~\ref{chap:uncertainty} is applied here to each energy bin of the Zr transmission datasets. \autoref{fig:eval_zr90_musgrove_ctunc_vs_measurement_unc} compares the magnitude of this model uncertainty to the reported experimental uncertainty for the Musgrove (1977) $^{90}$Zr dataset, showing that the model uncertainty becomes comparable to or exceeds the experimental uncertainty at higher energies where fewer resonances contribute to each bin.
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.85\textwidth]{Evaluation/Figures/zr90-musgrove-ctunc-vs-measurement-unc.png}
+    \includegraphics[width=0.85\textwidth]{Evaluation/Figures/zr90-musgrove-ctunc-vs-measurement-unc-2.pdf}
     \caption{Comparison of the estimated self-shielding correction (model) uncertainty to the experimental (reported) uncertainty for the Musgrove (1977) 2~cm $^{90}$Zr transmission dataset. At higher energies within the URR, the model uncertainty exceeds the experimental uncertainty.}
     \label{fig:eval_zr90_musgrove_ctunc_vs_measurement_unc}
 \end{figure}
 
-\autoref{fig:eval_zr90_musgrove_ctunc_vs_measurement_unc} compares the magnitude of the model uncertainty to the reported experimental uncertainty for the Musgrove (1977) $^{90}$Zr transmission dataset. At lower energies (below $\sim$600~keV), the experimental uncertainty dominates because the higher resonance density provides better statistical sampling within each energy bin. However, at higher energies within the URR, where fewer resonances contribute to each bin, the model uncertainty becomes comparable to or exceeds the experimental uncertainty. This crossover underscores the importance of including the finite-resonance uncertainty in the evaluation.
-
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.85\textwidth]{Evaluation/Figures/zr90-musgrove-220kev-ctunc.png}
-    \caption{Distribution of transmission correction factors $C_T$ from Monte Carlo sampling for a representative energy bin (220~keV) of the Musgrove (1977) $^{90}$Zr dataset. The asymmetric distribution reflects the nonlinear relationship between resonance fluctuations and self-shielding.}
-    \label{fig:eval_zr90_musgrove_220kev_ctunc}
-\end{figure}
-
-The distribution of $C_T$ values for a representative energy bin is shown in \autoref{fig:eval_zr90_musgrove_220kev_ctunc}. The distribution is notably asymmetric, with a tail extending toward higher correction factors. This asymmetry reflects the nonlinear relationship between resonance fluctuations and transmission: a single strong resonance can produce a large increase in $C_T$, but there is a lower bound on $C_T$ approaching unity for negligible self-shielding. The Monte Carlo sampling approach properly captures this non-Gaussian character.
-
-The total uncertainty on each binned experimental data point is computed by combining the experimental (statistical) uncertainty and the model uncertainty in quadrature:
+The total uncertainty on each binned data point combines the experimental and model contributions in quadrature:
 \begin{equation}
     \Delta_i = \sqrt{\Delta_{i,\mathrm{stats}}^2 + \Delta_{i,\mathrm{model}}^2},
     \label{eq:total_uncertainty}
@@ -313,36 +308,36 @@ The Musgrove (1977) $^{90}$Zr dataset (\autoref{fig:eval_trans_musgrove_zr90}) c
 
 The $^{91}$Zr fit (\autoref{fig:eval_trans_musgrove_zr91}) demonstrates good agreement throughout the URR, with residuals typically within $\pm 2\%$. Unlike $^{90}$Zr, no intermediate structure is present in $^{91}$Zr, and the transmission increases smoothly with energy as expected for a conventional URR cross section. A slight positive bias is observed in the 0.35--0.45~MeV range, but this lies below the defined URR boundary (220~keV) and may reflect RRR contributions. The absence of systematic residual structure within the URR confirms that energy-independent average resonance parameters adequately describe the $^{91}$Zr cross section.
 
-The evaluation is also validated against natural zirconium transmission measurements from Rapp (2019), which were \emph{not} used in the fitting process. These measurements provide an independent check that the isotopic parameters, when combined according to natural abundances, produce physically consistent results.
+The natural zirconium transmission measurements from Rapp (2019) were included in the fitting procedure alongside the enriched samples. These thick natural samples experience strong self-shielding, providing valuable discrimination between smooth and resonant contributions to the cross section. Because natural zirconium contains contributions from all stable isotopes, including both $^{90}$Zr and $^{91}$Zr, the natural data simultaneously constrain the parameters of both isotopes and enforce consistency of the combined isotopic cross sections with direct measurement.
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.95\textwidth]{Evaluation/Figures/transmission_rapp_6cm.pdf}
-    \caption{Validation against Rapp (2019) natural zirconium transmission (6~cm sample). This dataset was not used in fitting. Residuals of 5--10\% in the 0.8--1.0~MeV region likely reflect limitations in the other zirconium isotopes ($^{92,94,96}$Zr), which were not re-evaluated.}
+    \caption{Fitted transmission for the Rapp (2019) natural zirconium dataset (6~cm sample). Residuals of 5--10\% in the 0.8--1.0~MeV region likely reflect limitations in the other zirconium isotopes ($^{92,94,96}$Zr), which were not re-evaluated.}
     \label{fig:eval_trans_rapp_6cm}
 \end{figure}
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.95\textwidth]{Evaluation/Figures/transmission_rapp_10cm.pdf}
-    \caption{Validation against Rapp (2019) natural zirconium transmission (10~cm sample). The heavily self-shielded thick sample shows larger residuals, particularly in the 0.8--1.4~MeV region where $^{90}$Zr intermediate structure contributes.}
+    \caption{Fitted transmission for the Rapp (2019) natural zirconium dataset (10~cm sample). The heavily self-shielded thick sample shows larger residuals, particularly in the 0.8--1.4~MeV region where $^{90}$Zr intermediate structure contributes.}
     \label{fig:eval_trans_rapp_10cm}
 \end{figure}
 
-The 6~cm sample (\autoref{fig:eval_trans_rapp_6cm}) shows generally good agreement, with residuals within $\pm 5\%$ for most energy bins. A notable outlier near 0.85~MeV shows approximately $-10\%$ deviation, occurring precisely where the $^{90}$Zr intermediate structure peak contributes most strongly to the natural zirconium cross section. This suggests that while the doorway state model significantly improves the fit to enriched data, some residual discrepancy remains when extrapolated to the natural mixture.
+The 6~cm sample (\autoref{fig:eval_trans_rapp_6cm}) shows generally good agreement, with residuals within $\pm 5\%$ for most energy bins. A notable outlier near 0.85~MeV shows approximately $-10\%$ deviation, occurring precisely where the $^{90}$Zr intermediate structure peak contributes most strongly to the natural zirconium cross section. This residual likely reflects limitations in the other stable zirconium isotopes ($^{92,94,96}$Zr), which retain their ENDF/B-VIII.1 parameters and were not re-evaluated in this work.
 
-The 10~cm sample (\autoref{fig:eval_trans_rapp_10cm}) exhibits larger residuals, particularly in the 0.5--1.4~MeV region where deviations of 5--15\% are observed. The heavily self-shielded thick sample amplifies any deficiencies in the cross-section model. The pattern of residuals---predominantly negative at lower energies and improving toward higher energies---suggests that the combined natural zirconium cross section is overpredicted in the intermediate structure region. This may reflect limitations in the other stable zirconium isotopes ($^{92,94,96}$Zr), which were not re-evaluated in this work and retain their ENDF/B-VIII.1 parameters, or indicate that the $^{90}$Zr doorway state contributions are slightly overestimated when propagated to natural mixtures.
+The 10~cm sample (\autoref{fig:eval_trans_rapp_10cm}) exhibits larger residuals, particularly in the 0.5--1.4~MeV region where deviations of 5--15\% are observed. The heavily self-shielded thick sample amplifies any deficiencies in the cross-section model. The pattern of residuals, predominantly negative at lower energies and improving toward higher energies, suggests that the combined natural zirconium cross section is overpredicted in the intermediate structure region. This may reflect limitations in the other stable zirconium isotopes ($^{92,94,96}$Zr), which were not re-evaluated in this work and retain their ENDF/B-VIII.1 parameters, or indicate that the $^{90}$Zr doorway state contributions are slightly overestimated when propagated to natural mixtures.
 
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/residual_by_energy.pdf}
-    \caption{Average absolute residual magnitude as a function of energy, aggregated across all transmission datasets. The peak near 0.8--1.0~MeV reflects the challenging intermediate structure region in $^{90}$Zr.}
-    \label{fig:eval_residual_summary}
-\end{figure}
+%\begin{figure}[h!]
+%    \centering
+%    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/residual_by_energy.pdf}
+%    \caption{Average absolute residual magnitude as a function of energy, aggregated across all transmission datasets. The peak near 0.8--1.0~MeV reflects the challenging intermediate structure region in $^{90}$Zr.}
+%    \label{fig:eval_residual_summary}
+%\end{figure}
+%
+%\autoref{fig:eval_residual_summary} summarizes the fitting performance across all transmission datasets by showing the average absolute residual magnitude as a function of energy. The residuals are largest ($\sim$4--5\%) in the 0.4--0.6~MeV region, which lies below the $^{90}$Zr URR boundary and includes contributions from the tail of the resolved resonance region. Within the $^{90}$Zr URR (0.8--1.78~MeV), residuals are generally 1--2\%, indicating good model performance with the doorway state treatment. The residuals decrease toward higher energies, reaching approximately 1\% above 1.5~MeV where the cross section is dominated by conventional URR behavior.
 
-\autoref{fig:eval_residual_summary} summarizes the fitting performance across all transmission datasets by showing the average absolute residual magnitude as a function of energy. The residuals are largest ($\sim$4--5\%) in the 0.4--0.6~MeV region, which lies below the $^{90}$Zr URR boundary and includes contributions from the tail of the resolved resonance region. Within the $^{90}$Zr URR (0.8--1.78~MeV), residuals are generally 1--2\%, indicating good model performance with the doorway state treatment. The residuals decrease toward higher energies, reaching approximately 1\% above 1.5~MeV where the cross section is dominated by conventional URR behavior.
-
-The overall fit quality demonstrates that the evaluation methodology---including the intermediate structure model for $^{90}$Zr and the self-shielding uncertainty quantification---produces physically reasonable parameters that reproduce the experimental observables within their uncertainties.
+The overall fit quality demonstrates that the evaluation methodology, including the intermediate structure model for $^{90}$Zr and the self-shielding uncertainty quantification, produces physically reasonable parameters that reproduce the experimental observables within their uncertainties.
 
 
 \subsection{$^{90}$Zr Evaluated Cross Sections}
@@ -352,57 +347,57 @@ The final fitted URR parameters for $^{90}$Zr are presented in \autoref{tab:zr90
 
 \begin{table}[h!]
     \centering
-    \caption{Initial and final compound nucleus URR parameters for $^{90}$Zr. Initial values are the starting parameters provided to the fitting code; final values are the converged result. The doorway state parameters are given separately in \autoref{tab:doorway_parameters}. The $\ell = 2$ radiation width is linked to $\ell = 0$.}
+    \caption{Initial and final compound nucleus URR parameters for $^{90}$Zr. Initial values for $S_\ell$ and $\langle\Gamma_\gamma\rangle$ are the RRR-derived priors; initial values for $R_\ell^\infty$ are the adjusted values from the doorway state fit (\autoref{ssec:eval_intermediate_structure}). Final values are the converged result. The doorway state parameters are given separately in \autoref{tab:doorway_parameters}. The $\ell = 2$ radiation width is linked to $\ell = 0$.}
     \label{tab:zr90_final_parameters}
     \begin{tabular}{c cc cc cc}
         \hline
         & \multicolumn{2}{c}{$S_\ell^{\mathrm{CN}}$ ($\times 10^{-4}$)} & \multicolumn{2}{c}{$R_\ell^\infty$} & \multicolumn{2}{c}{$\langle\Gamma_\gamma\rangle$ (eV)} \\
         $\ell$ & Initial & Final & Initial & Final & Initial & Final \\
         \hline
-        0 & 0.616 & 0.714 & $-0.018$ & $0.162$ & 0.224 & 0.174 \\
-        1 & 5.251 & 4.123 & $-0.114$ & $-0.095$ & 0.430 & 0.340 \\
-        2 & 2.099 & 1.257 & $-0.231$ & $-0.233$ & --- & --- \\
+        0 & 0.616 & 0.657 & $0.162$ & $0.254$ & 0.224 & 0.177 \\
+        1 & 5.251 & 3.714 & $-0.095$ & $-0.009$ & 0.430 & 0.302 \\
+        2 & 2.099 & 0.942 & $-0.231$ & $-0.146$ & --- & --- \\
         \hline
     \end{tabular}
 \end{table}
 
-The s-wave and p-wave distant-level parameters differ notably from the prior RRR values, reflecting the adjustment needed to accommodate the smooth baseline contribution from the doorway states. The compound nucleus p-wave strength function ($S_1^{\mathrm{CN}} = 4.12 \times 10^{-4}$) is lower than the RRR-derived prior ($5.39 \times 10^{-4}$) because the doorway states now explicitly account for much of the observed p-wave strength.
+The distant-level parameters $R_\ell^\infty$ were pre-adjusted during the doorway state fit (\autoref{ssec:eval_intermediate_structure}) to accommodate the smooth baseline contribution from the doorway states, and those adjusted values served as the initial parameters for the final fit. The fitAPI further refined them, with $R_0^\infty$ shifting from $0.162$ to $0.254$ and $R_1^\infty$ from $-0.095$ to $-0.009$. The compound nucleus p-wave strength function ($S_1^{\mathrm{CN}} = 3.71 \times 10^{-4}$) is substantially lower than the RRR-derived prior ($5.39 \times 10^{-4}$) because the doorway states now explicitly account for much of the observed p-wave strength. The d-wave strength function is also reduced significantly ($S_2^{\mathrm{CN}} = 0.94 \times 10^{-4}$ from a prior of $2.10 \times 10^{-4}$), indicating that the inclusion of the natural zirconium data in the fit provides additional constraint on the higher partial waves.
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/xs_zr90_total.pdf}
-    \caption{Total cross section for $^{90}$Zr comparing the RPI evaluation to ENDF/B-VIII.1. The RPI evaluation (URR, solid line) shows the intermediate structure enhancement near 0.8--1.0~MeV that is absent in ENDF/B-VIII.1. The binned RRR cross section from the concurrent resolved resonance evaluation is also shown for continuity verification.}
+    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/totxs_zr90_linlin.pdf}
+    \caption{Total cross section for $^{90}$Zr comparing the RPI evaluation (red) to ENDF/B-VIII.1 (blue, with uncertainty band). The RPI evaluation captures the intermediate structure enhancement near 0.5--0.8~MeV from the p-wave doorway states. The binned RRR cross section from the concurrent resolved resonance evaluation (gray points) demonstrates continuity at the RRR/URR interface near 0.8~MeV. Above the URR boundary, the RPI evaluation is consistently $\sim$5\% higher than ENDF/B-VIII.1.}
     \label{fig:eval_zr90_totxs_comparison}
 \end{figure}
 
-The evaluated total cross section for $^{90}$Zr is compared to ENDF/B-VIII.1 in \autoref{fig:eval_zr90_totxs_comparison}. The most significant difference is the presence of intermediate structure in the new evaluation, producing cross sections 5--10\% higher than ENDF/B-VIII.1 in the 0.8--1.0~MeV region. This structure, arising from the p-wave doorway states, is essential for reproducing the experimental transmission data and represents a major improvement over the featureless ENDF/B-VIII.1 cross section. The binned resolved resonance cross section from the concurrent RRR evaluation is also shown, demonstrating smooth continuity at the RRR/URR interface near 0.8~MeV.
+The evaluated total cross section for $^{90}$Zr is compared to ENDF/B-VIII.1 in \autoref{fig:eval_zr90_totxs_comparison}. The most striking feature is the intermediate structure captured by the RPI evaluation in the pre-URR region (0.5--0.8~MeV), where the p-wave doorway states produce broad enhancements that are entirely absent in the featureless ENDF/B-VIII.1 cross section. Above the URR boundary at 0.8~MeV, the RPI evaluation produces cross sections approximately 5\% higher than ENDF/B-VIII.1 across the full energy range. This systematic offset is consistent with the hypothesis that the ENDF evaluation was derived from self-shielded natural measurements without proper correction, resulting in a systematic underestimate of the true cross section. The binned resolved resonance cross section from the concurrent RRR evaluation demonstrates smooth continuity at the RRR/URR interface.
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.95\textwidth]{Evaluation/Figures/zr90_totxs_uncertainty_correlation.pdf}
-    \caption{Uncertainty and correlation for the $^{90}$Zr total cross section in the URR. Left: Relative uncertainty as a function of energy (0.6--1.0\%). Right: Energy-energy correlation matrix showing strong positive correlations throughout the URR.}
+    \caption{Uncertainty and correlation for the $^{90}$Zr total cross section in the URR. Left: Relative uncertainty as a function of energy (0.25--0.50\%). Right: Energy-energy correlation matrix showing cross-shaped regions of reduced correlation at specific energies corresponding to energy bin boundaries where the doorway state contributions shift the local parameter sensitivity.}
     \label{fig:eval_zr90_totxs_covariance}
 \end{figure}
 
-The uncertainty and correlation structure of the total cross section are shown in \autoref{fig:eval_zr90_totxs_covariance}. The relative uncertainty ranges from approximately 0.6\% near the lower URR boundary to 1.0\% at higher energies. These uncertainties properly include the self-shielding model uncertainty propagated through the fitting procedure. The correlation matrix reveals an important feature of the current evaluation methodology. The reduced correlations ($\sim$0.80) near the lower URR boundary (0.8--1.0~MeV) occur precisely where the doorway state contributions dominate the cross section. Because the doorway state parameters were held fixed during the compound nucleus parameter fit, the uncertainty in this energy region is artificially suppressed and does not correlate with the uncertainty at higher energies where the compound nucleus parameters dominate. This represents a limitation of the current approach: a complete uncertainty quantification would require propagating the doorway state parameter uncertainties as well, which is identified as an area for future work.
+The uncertainty and correlation structure of the total cross section are shown in \autoref{fig:eval_zr90_totxs_covariance}. The relative uncertainty ranges from approximately 0.25\% near the lower URR boundary to 0.50\% at higher energies. These uncertainties properly include the self-shielding model uncertainty propagated through the fitting procedure. The correlation matrix reveals a distinctive cross-shaped pattern of reduced correlations at specific energies within the URR. These features occur at energies where the doorway state contributions shift the balance between the smooth and resonant components of the cross section, producing local changes in parameter sensitivity that partially decorrelate adjacent energy bins. Because the doorway state parameters were held fixed during the compound nucleus parameter fit, the uncertainty in energy regions dominated by doorway contributions is artificially suppressed. This represents a limitation of the current approach: a complete uncertainty quantification would require propagating the doorway state parameter uncertainties as well, which is identified as an area for future work.
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/zr90_capxs_comparison.pdf}
-    \caption{Capture cross section for $^{90}$Zr comparing the RPI evaluation to ENDF/B-VIII.1. No experimental capture data exist in the defined URR (0.8--1.78~MeV), so this cross section is constrained only by continuity with the RRR and consistency with the transmission-derived parameters.}
+    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/capxs_zr90_loglog.pdf}
+    \caption{Capture cross section for $^{90}$Zr comparing the RPI evaluation (red) to ENDF/B-VIII.1 (blue, with uncertainty band). The binned RRR cross section (brown points) and Ohgama (2005) data (green) are also shown. No experimental capture data exist in the defined URR above 0.8~MeV.}
     \label{fig:eval_zr90_capxs_comparison}
 \end{figure}
 
-The capture cross section (\autoref{fig:eval_zr90_capxs_comparison}) presents a significant challenge due to the complete absence of experimental data in the $^{90}$Zr URR. The new evaluation predicts systematically higher capture cross sections than ENDF/B-VIII.1, with the difference increasing at higher energies. This difference arises from the different radiation width values and the inclusion of intermediate structure effects. The absence of experimental constraint means that the capture cross section carries substantial uncertainty and represents an area where future measurements would significantly improve the evaluation.
+The capture cross section (\autoref{fig:eval_zr90_capxs_comparison}) presents a significant challenge due to the limited experimental data for $^{90}$Zr capture. The Ohgama (2005) measurement at 0.55~MeV provides a single constraint near the URR boundary, and the binned RRR evaluation constrains the lower energies, but no experimental capture data exist above 0.8~MeV. The RPI evaluation predicts lower capture cross sections than ENDF/B-VIII.1 throughout the URR, with the two evaluations diverging increasingly at higher energies where ENDF/B-VIII.1 shows an upturn that is not supported by extrapolation from the resolved region. The absence of experimental constraint in the URR proper means that the capture cross section carries substantial uncertainty and represents an area where future measurements would significantly improve the evaluation.
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.95\textwidth]{Evaluation/Figures/zr90_capxs_uncertainty_correlation.pdf}
-    \caption{Uncertainty and correlation for the $^{90}$Zr capture cross section. Left: Relative uncertainty (0.25--0.35\%). Right: Energy-energy correlation matrix.}
+    \caption{Uncertainty and correlation for the $^{90}$Zr capture cross section. Left: Relative uncertainty (0.40--0.56\%). Right: Energy-energy correlation matrix showing near-unity correlations (0.995--1.000) throughout the URR.}
     \label{fig:eval_zr90_capxs_covariance}
 \end{figure}
 
-The capture cross-section covariance (\autoref{fig:eval_zr90_capxs_covariance}) shows relative uncertainties of approximately 0.26--0.35\%, increasing slightly toward higher energies. The correlation matrix shows a similar structure to the total cross section, with reduced correlations near 0.85~MeV where the doorway state contributions are largest. The small uncertainties near the doorway state peak should be interpreted with caution: because the doorway parameters were held fixed, the uncertainty in this region reflects only the compound nucleus parameter contributions and is artificially low. The true uncertainty, which would include doorway state parameter uncertainties, is likely substantially larger in this energy range. This limitation, combined with the complete absence of experimental capture data in the URR, means that the capture cross-section uncertainties presented here represent a lower bound on the true uncertainty.
+The capture cross-section covariance (\autoref{fig:eval_zr90_capxs_covariance}) shows relative uncertainties of approximately 0.40--0.56\%, increasing toward higher energies. The correlation matrix exhibits near-unity correlations (0.995--1.000) across all energy pairs, reflecting the fact that the capture cross section throughout the URR is controlled almost entirely by a single parameter, the radiation width $\langle\Gamma_\gamma\rangle$. This near-perfect correlation means that the capture cross section can shift up or down as a unit but has very little freedom to change shape. The small uncertainties should be interpreted with caution: because the doorway parameters were held fixed and no experimental capture data constrain the URR directly, the reported uncertainties reflect only the compound nucleus parameter contributions and represent a lower bound on the true uncertainty.
 
 
 \subsection{$^{91}$Zr Evaluated Cross Sections}
@@ -419,50 +414,50 @@ The final fitted URR parameters for $^{91}$Zr are presented in \autoref{tab:zr91
         & \multicolumn{2}{c}{$S_\ell$ ($\times 10^{-4}$)} & \multicolumn{2}{c}{$R_\ell^\infty$} & \multicolumn{2}{c}{$\langle\Gamma_\gamma\rangle$ (eV)} \\
         $\ell$ & Initial & Final & Initial & Final & Initial & Final \\
         \hline
-        0 & 0.399 & 0.382 & $-0.189$ & $-0.198$ & 0.165 & 0.160 \\
-        1 & 5.006 & 5.127 & $-0.226$ & $-0.215$ & 0.237 & 0.232 \\
-        2 & 0.325 & 0.255 & $-0.274$ & $-0.258$ & --- & --- \\
+        0 & 0.399 & 0.559 & $-0.189$ & $-0.167$ & 0.165 & 0.127 \\
+        1 & 5.006 & 5.765 & $-0.226$ & $-0.212$ & 0.237 & 0.220 \\
+        2 & 0.325 & 0.265 & $-0.274$ & $-0.264$ & --- & --- \\
         \hline
     \end{tabular}
 \end{table}
 
-The parameters show excellent consistency with the prior values from the resolved resonance region, with adjustments well within the prior uncertainties. This consistency supports the physical reasonableness of both the RRR and URR evaluations.
+The fitted parameters show some notable departures from the prior values. The s-wave strength function increases from $0.40$ to $0.56 \times 10^{-4}$, and the p-wave strength function increases modestly from $5.01$ to $5.77 \times 10^{-4}$. The s-wave radiation width decreases from 0.165~eV to 0.127~eV, reflecting the additional constraint provided by the natural zirconium transmission data, which are sensitive to the combined isotopic cross sections and help discriminate between elastic and capture contributions. The distant-level parameters remain close to their prior values, indicating that the smooth background cross-section component is well constrained by the resolved resonance region.
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/zr91_totxs_comparison.pdf}
-    \caption{Total cross section for $^{91}$Zr comparing the RPI evaluation to ENDF/B-VIII.1. Unlike $^{90}$Zr, no intermediate structure is present, and the cross section decreases smoothly with energy as expected for conventional URR behavior. The ENDF/B-VIII.1 evaluation shows unphysical fluctuations that likely reflect artifacts from natural zirconium data processing.}
+    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/totxs_zr91_linlin.pdf}
+    \caption{Total cross section for $^{91}$Zr comparing the RPI evaluation (red) to ENDF/B-VIII.1 (blue, with uncertainty band). Unlike $^{90}$Zr, no intermediate structure is present, and the RPI cross section decreases smoothly with energy. The ENDF/B-VIII.1 evaluation exhibits pronounced unphysical fluctuations, particularly near 0.15--0.8~MeV, that arise from the propagation of natural zirconium structure into the isotopic evaluation. The binned RRR cross section (gray points) demonstrates continuity at the 220~keV URR boundary.}
     \label{fig:eval_zr91_totxs_comparison}
 \end{figure}
 
-The $^{91}$Zr total cross section (\autoref{fig:eval_zr91_totxs_comparison}) exhibits the smooth, monotonically decreasing behavior expected for a conventional URR cross section without doorway state contributions. The new evaluation differs notably from ENDF/B-VIII.1, which shows unphysical fluctuations---particularly the bump near 0.5~MeV---that are not supported by the enriched transmission data. These artifacts in the current ENDF evaluation likely arise from the use of natural zirconium measurements that were not properly deconvolved to extract isotopic cross sections.
+The $^{91}$Zr total cross section (\autoref{fig:eval_zr91_totxs_comparison}) exhibits the smooth, monotonically decreasing behavior expected for a conventional URR cross section without doorway state contributions. The contrast with ENDF/B-VIII.1 is striking: the current library shows pronounced oscillatory structure throughout the 0.15--0.8~MeV range, with the ENDF uncertainty band encompassing a wide spread that reflects the unphysical fluctuations. These artifacts are not supported by the enriched $^{91}$Zr transmission data and likely arise from the use of natural zirconium measurements that were not properly deconvolved to extract isotopic cross sections. The RPI evaluation eliminates these artifacts entirely, producing a smooth cross section that is well constrained by the binned RRR data at the 220~keV boundary.
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.95\textwidth]{Evaluation/Figures/zr91_totxs_uncertainty_correlation.pdf}
-    \caption{Uncertainty and correlation for the $^{91}$Zr total cross section. Left: Relative uncertainty as a function of energy (0.75--1.15\%). Right: Energy-energy correlation matrix showing uniformly high correlations (0.97--1.00) throughout the URR.}
+    \caption{Uncertainty and correlation for the $^{91}$Zr total cross section. Left: Relative uncertainty as a function of energy (0.25--0.60\%). Right: Energy-energy correlation matrix showing high correlations above 0.5~MeV with reduced correlations ($\sim$0.2--0.4) at the lowest URR energies.}
     \label{fig:eval_zr91_totxs_covariance}
 \end{figure}
 
-The covariance structure (\autoref{fig:eval_zr91_totxs_covariance}) shows relative uncertainties of 0.75--1.15\%, increasing toward higher energies where the experimental constraints become sparser. The correlation matrix exhibits uniformly high correlations (0.97--1.00) across all energy pairs, reflecting the dominance of a few common parameters---primarily the p-wave strength function---in determining the cross-section magnitude throughout the URR. This uniform correlation structure contrasts with $^{90}$Zr, where the fixed doorway state parameters produced regions of reduced correlation.
+The covariance structure (\autoref{fig:eval_zr91_totxs_covariance}) shows relative uncertainties of 0.25--0.60\%, increasing toward higher energies where the experimental constraints become sparser. The correlation matrix exhibits high correlations (0.8--1.0) above approximately 0.5~MeV, reflecting the dominance of a few common parameters, primarily the p-wave strength function, in determining the cross-section magnitude in that region. However, the correlations decrease substantially (to $\sim$0.2--0.4) at the lowest URR energies near 0.3~MeV. This reduced correlation near the URR lower boundary reflects the transition from the resolved resonance region to the statistical URR treatment: the cross section in this transition region is sensitive to both the RRR tail and the URR average parameters, producing partial decorrelation from the higher-energy behavior. This correlation structure contrasts with $^{90}$Zr, where the cross-shaped decorrelation pattern arose from the doorway state contributions.
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/zr91_capxs_comparison.pdf}
-    \caption{Capture cross section for $^{91}$Zr comparing the RPI evaluation to ENDF/B-VIII.1. The new evaluation predicts systematically lower capture cross sections than ENDF/B-VIII.1 throughout the URR.}
+    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/capxs_zr91_loglog.pdf}
+    \caption{Capture cross section for $^{91}$Zr comparing the RPI evaluation (red) to ENDF/B-VIII.1 (blue, with uncertainty band). The binned RRR cross section (brown points) and Ohgama (2005) data (green) provide experimental constraints extending into the lower portion of the URR.}
     \label{fig:eval_zr91_capxs_comparison}
 \end{figure}
 
-The $^{91}$Zr capture cross section (\autoref{fig:eval_zr91_capxs_comparison}) benefits from more experimental constraint than $^{90}$Zr, with capture data from Ohgama (2005) and Gan (2024) extending into the lower portion of the URR. The new evaluation predicts systematically lower capture cross sections than ENDF/B-VIII.1, with differences of approximately 10--15\% at higher energies. This difference reflects the updated radiation width values derived from the concurrent resolved resonance evaluation.
+The $^{91}$Zr capture cross section (\autoref{fig:eval_zr91_capxs_comparison}) benefits from more experimental constraint than $^{90}$Zr, with capture data from Ohgama (2005) extending into the lower portion of the URR and the binned RRR evaluation providing dense coverage below 220~keV. The RPI evaluation predicts systematically lower capture cross sections than ENDF/B-VIII.1, with the two evaluations diverging at higher energies where ENDF/B-VIII.1 shows an upturn. This difference reflects the updated radiation width values derived from the concurrent resolved resonance evaluation and the additional constraint provided by the natural zirconium transmission data in the simultaneous fit.
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.95\textwidth]{Evaluation/Figures/zr91_capxs_uncertainty_correlation.pdf}
-    \caption{Uncertainty and correlation for the $^{91}$Zr capture cross section. Left: Relative uncertainty (0.60--0.75\%). Right: Energy-energy correlation matrix showing reduced correlations at the lowest energies where the RRR/URR transition occurs.}
+    \caption{Uncertainty and correlation for the $^{91}$Zr capture cross section. Left: Relative uncertainty (0.15--0.38\%). Right: Energy-energy correlation matrix showing high correlations above 0.5~MeV with reduced correlations ($\sim$0.4) at the lowest URR energies.}
     \label{fig:eval_zr91_capxs_covariance}
 \end{figure}
 
-The capture cross-section covariance (\autoref{fig:eval_zr91_capxs_covariance}) shows relative uncertainties of 0.60--0.75\%, somewhat smaller than for $^{90}$Zr due to the availability of experimental capture data in the lower URR. The correlation matrix shows an interesting structure: correlations are very high (0.95--1.00) at energies above 0.5~MeV but decrease to 0.70--0.85 at the lowest URR energies. This reduced correlation near the URR lower boundary reflects the transition from the resolved resonance region, where individual resonance parameters contribute, to the statistical URR treatment. The capture cross section in this transition region is sensitive to both the RRR tail and the URR average parameters, producing partial decorrelation from the higher-energy behavior.
+The capture cross-section covariance (\autoref{fig:eval_zr91_capxs_covariance}) shows relative uncertainties of 0.15--0.38\%, with a characteristic shape: the uncertainty is small ($\sim$0.15\%) near the lower URR boundary where the RRR constraint is strongest, increases steadily through the URR, and shows a sharp upturn near the upper boundary at 1.2~MeV where the experimental constraints are weakest. The correlation matrix shows high correlations (0.8--1.0) above 0.5~MeV but decreases to approximately 0.4 at the lowest URR energies, mirroring the pattern observed in the total cross section. This reduced correlation near the URR lower boundary again reflects the transition from resolved resonance to statistical treatment, where the capture cross section is sensitive to both the RRR tail and the URR average parameters.
 
 
 
@@ -479,25 +474,93 @@ The quantitative fit quality for all datasets is summarized in \autoref{tab:chi2
         \hline
         \textbf{Dataset} & \textbf{Type} & \textbf{$N$} & \textbf{$\chi^2/N$} \\
         \hline
-        \multicolumn{4}{c}{\textit{Enriched samples (used in fit)}} \\
+        \multicolumn{4}{c}{\textit{Enriched samples}} \\
         \hline
-        Green (1973) $^{90}$Zr     & Enriched & 12 & 6.58 \\
-        Musgrove (1977) $^{90}$Zr  & Enriched & 14 & 23.63 \\
-        Musgrove (1977) $^{91}$Zr  & Enriched & 8 & 22.21 \\
+        Green (1973) $^{90}$Zr     & Enriched & 12 & 54.67 \\
+        Musgrove (1977) $^{90}$Zr  & Enriched & 14 & 60.39 \\
+        Musgrove (1977) $^{91}$Zr  & Enriched & 8 & 23.67 \\
         \hline
-        \multicolumn{4}{c}{\textit{Natural samples (validation only)}} \\
+        \multicolumn{4}{c}{\textit{Natural samples}} \\
         \hline
-        Rapp (2019) Nat-Zr, 6~cm   & Natural  & 13 & 77.48 \\
-        Rapp (2019) Nat-Zr, 10~cm  & Natural  & 13 & 36.25 \\
+        Rapp (2019) Nat-Zr, 6~cm   & Natural  & 13 & 66.93 \\
+        Rapp (2019) Nat-Zr, 10~cm  & Natural  & 13 & 33.20 \\
         \hline
     \end{tabular}
 \end{table}
 
 
-The $\chi^2/N$ values in \autoref{tab:chi2_summary} are computed using only the reported experimental uncertainties and are therefore substantially greater than unity. This reflects the significance of the self-shielding model uncertainty (\autoref{ssec:eval_ct_uncertainty}): when the model uncertainty is included in the total uncertainty budget via \autoref{eq:total_uncertainty}, the $\chi^2/N$ values for the enriched datasets decrease toward unity, confirming that the combined experimental and model uncertainties provide a realistic estimate of the total uncertainty. The Green (1973) dataset shows the best agreement ($\chi^2/N = 6.58$), consistent with its broader energy coverage providing more effective averaging of statistical fluctuations.
+The $\chi^2/N$ values in \autoref{tab:chi2_summary} are computed using only the reported experimental uncertainties and are therefore substantially greater than unity. This reflects the significance of the self-shielding model uncertainty (\autoref{ssec:eval_ct_uncertainty}): when the model uncertainty is included in the total uncertainty budget via \autoref{eq:total_uncertainty}, the $\chi^2/N$ values decrease toward unity, confirming that the combined experimental and model uncertainties provide a realistic estimate of the total uncertainty. The $^{91}$Zr Musgrove dataset shows the best agreement ($\chi^2/N = 23.67$), consistent with the conventional (non-doorway) URR behavior of this isotope being more straightforward to model. The enriched $^{90}$Zr datasets show comparable fit quality ($\chi^2/N \approx 55$--$60$), reflecting the challenge of simultaneously fitting the intermediate structure region across all datasets.
 
-The natural zirconium validation datasets show substantially larger $\chi^2/N$ values, reflecting both the independent nature of these measurements and the limitations in the other zirconium isotopes ($^{92,94,96}$Zr) that were not re-evaluated. The 6~cm Rapp sample shows the largest $\chi^2/N$, driven by the strong intermediate-structure region where the combined isotopic cross section is most sensitive to the other zirconium isotopes. A comprehensive re-evaluation of all stable zirconium isotopes would be required to achieve optimal agreement with natural zirconium data.
+The natural zirconium datasets show $\chi^2/N$ values comparable to or better than the enriched samples, which is notable given the additional modeling challenge posed by the un-re-evaluated isotopes ($^{92,94,96}$Zr) that retain their ENDF/B-VIII.1 parameters. The natural data serve an important role in the fit by providing strongly self-shielded constraints that discriminate between the smooth and resonant contributions to the cross section, and by enforcing consistency of the combined $^{90}$Zr and $^{91}$Zr parameters with direct measurement on natural samples. A comprehensive re-evaluation of all stable zirconium isotopes would be required to further improve agreement with the natural zirconium data.
 
+
+
+\subsection{Comparison to ENDF/B-VIII.1 via MCNP}
+\label{ssec:eval_mcnp_comparison}
+
+To validate the evaluation against the current ENDF/B-VIII.1 library on equal footing, MCNP simulations were performed for each experimental configuration. MCNP uses probability tables sampled from the ENDF/B-VIII.1 URR parameters to compute self-shielded transmission through the exact sample geometry, thickness, and isotopic composition of each experiment. This provides a direct comparison: both the RPI evaluation and the ENDF library are tested against the same experimental data using the same observable (transmission). The pointwise experimental data were rebinned onto the MCNP energy grid ($\sim$7--18~keV bins depending on the dataset), and $\chi^2/N$ was computed at the rebinned points, restricted to the URR energy ranges (0.8--1.78~MeV for $^{90}$Zr, 0.22--1.25~MeV for $^{91}$Zr, and up to 1.78~MeV for the natural samples). The results are summarized in \autoref{tab:mcnp_comparison}.
+
+\begin{table}[h!]
+    \centering
+    \caption{Comparison of reduced $\chi^2/N$ between the RPI evaluation and ENDF/B-VIII.1 (via MCNP) for all transmission datasets, restricted to the URR energy ranges.}
+    \label{tab:mcnp_comparison}
+    \begin{tabular}{l c c c c}
+        \hline
+        \textbf{Dataset} & \textbf{$N$} & \textbf{ENDF/B-VIII.1} & \textbf{RPI Evaluation} & \textbf{Improvement} \\
+        \hline
+        Green (1973) $^{90}$Zr     & 97  & 2.9   & 3.2   & 0.9$\times$ \\
+        Musgrove (1977) $^{90}$Zr  & 55  & 120.6 & 99.8  & 1.2$\times$ \\
+        Musgrove (1977) $^{91}$Zr  & 148 & 290.1 & 132.5 & 2.2$\times$ \\
+        Rapp (2019) Nat-Zr, 6~cm   & 86  & 910.6 & 298.3 & 3.1$\times$ \\
+        Rapp (2019) Nat-Zr, 10~cm  & 86  & 817.7 & 309.1 & 2.6$\times$ \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Figures~\ref{fig:mcnp_green}--\ref{fig:mcnp_rapp10} present the detailed transmission comparisons for each dataset, showing the pointwise experimental data, the rebinned experimental averages, and the calculated transmission from both the RPI evaluation and ENDF/B-VIII.1 (via MCNP). The lower panels display the $(C-E)/E$ residuals for both calculations.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/fit_detail_green.pdf}
+    \caption{Transmission comparison for the Green (1973) enriched $^{90}$Zr dataset (0.0799~at/b, 97.7\% enriched). The RPI evaluation (solid red) captures the intermediate structure dips near 0.55, 0.7, and 0.85~MeV that the ENDF/B-VIII.1 calculation (dashed blue) misses entirely. Residuals for both calculations are comparable in the URR above 0.8~MeV.}
+    \label{fig:mcnp_green}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/fit_detail_musgrove90.pdf}
+    \caption{Transmission comparison for the Musgrove (1977) enriched $^{90}$Zr dataset (0.0827~at/b, 97.7\% enriched). Both evaluations show similar performance above 1~MeV, but ENDF/B-VIII.1 exhibits oscillatory residuals in the 0.5--0.8~MeV range that are substantially reduced in the RPI evaluation.}
+    \label{fig:mcnp_musgrove90}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/fit_detail_musgrove91.pdf}
+    \caption{Transmission comparison for the Musgrove (1977) enriched $^{91}$Zr dataset (0.0642~at/b, 89.2\% enriched). The ENDF/B-VIII.1 calculation shows prominent oscillatory structure near 0.4--0.8~MeV (residuals exceeding $\pm 10\%$) arising from spurious $^{90}$Zr doorway structure propagated into the $^{91}$Zr evaluation. The RPI evaluation eliminates these artifacts and produces a smooth transmission that tracks the experimental data.}
+    \label{fig:mcnp_musgrove91}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/fit_detail_rapp6.pdf}
+    \caption{Transmission comparison for the Rapp (2019) natural zirconium 6~cm sample (0.2581~at/b). The ENDF/B-VIII.1 calculation (dashed blue) systematically overpredicts transmission across most of the energy range, consistent with an underestimation of the total cross section. The RPI evaluation (solid red) substantially reduces this bias.}
+    \label{fig:mcnp_rapp6}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Evaluation/Figures/fit_detail_rapp10.pdf}
+    \caption{Transmission comparison for the Rapp (2019) natural zirconium 10~cm sample (0.4296~at/b). The heavy self-shielding in this thick sample amplifies the systematic bias in ENDF/B-VIII.1, which overpredicts the transmission by 20--40\% in the 0.5--1.0~MeV region. The RPI evaluation provides substantially better agreement, though residual discrepancies remain, likely due to the un-re-evaluated $^{92,94,96}$Zr isotopes.}
+    \label{fig:mcnp_rapp10}
+\end{figure}
+
+The RPI evaluation achieves improved agreement across four of the five datasets. The most dramatic improvements occur for the natural zirconium samples, where the $\chi^2/N$ is reduced by factors of 2.6--3.1. The enriched $^{91}$Zr dataset shows a factor of 2.2 improvement, reflecting the elimination of spurious oscillatory structure present in the ENDF/B-VIII.1 evaluation near 0.4--0.8~MeV that is not supported by the experimental transmission data.
+
+The only dataset where ENDF/B-VIII.1 achieves comparable or slightly better performance is the Green (1973) enriched $^{90}$Zr measurement ($\chi^2/N = 2.9$ vs.\ 3.2). As visible in \autoref{fig:mcnp_green}, this thin, highly-enriched sample experiences relatively modest self-shielding, making it less sensitive to the improvements in the self-shielding treatment. The RPI evaluation trades marginal agreement with this single dataset for substantially improved performance across the broader suite, particularly the application-relevant thick natural samples.
+
+The Musgrove (1977) $^{91}$Zr comparison (\autoref{fig:mcnp_musgrove91}) illustrates the most striking qualitative improvement. The ENDF/B-VIII.1 calculation produces oscillatory residuals of $\pm 10\%$ in the 0.4--0.8~MeV range, arising from the spurious propagation of $^{90}$Zr doorway structure into the $^{91}$Zr cross section. The RPI evaluation eliminates these artifacts entirely, producing smooth residuals that track the experimental data.
+
+The improvement on the natural zirconium data (\autoref{fig:mcnp_rapp6} and \autoref{fig:mcnp_rapp10}) is particularly significant because the ENDF/B-VIII.1 evaluation was originally derived from natural zirconium measurements, meaning the natural samples should represent its most favorable comparison. However, the ENDF evaluation exhibits a systematic positive bias in the $(C-E)/E$ residuals across most of the energy range, consistently overpredicting transmission (underpredicting the total cross section). This pattern is consistent with the hypothesis that the ENDF cross sections were derived from natural measurements without proper self-shielding corrections applied: infinitely dilute cross sections extracted from self-shielded transmission data without correction will systematically underestimate the true cross section. The approximately 5\% higher cross section produced by the present evaluation across the full energy range (\autoref{fig:eval_zr90_totxs_comparison}) is consistent with the magnitude of self-shielding correction expected for these sample thicknesses. The thick 10~cm natural sample amplifies this effect, explaining why both evaluations show their largest residuals for this dataset, and why the RPI evaluation, which treats self-shielding self-consistently, shows the greatest relative improvement.
 
 
 \section{Discussion}
@@ -513,7 +576,9 @@ A central methodological contribution of this work is the direct fitting of URR 
 
 A practical consequence of fitting in measurement space is improved discrimination between parameters with similar effects on the infinitely dilute cross section. The strength function $S_\ell$ and distant-level parameter $R_\ell^\infty$ both contribute to the average cross section, creating strong correlations when fitting to cross-section data. However, their effects on self-shielded transmission are distinguishable: the strength function governs the resonance fluctuations that drive self-shielding, while $R_\ell^\infty$ contributes a smooth background that experiences minimal self-shielding. Fitting to transmission data from samples of varying thickness exploits this distinction and significantly reduces the $S_\ell$--$R_\ell^\infty$ correlation.
 
-This evaluation also achieves simultaneous fitting of transmission measurements and cross-section constraints within a single optimization framework. Below the URR, the binned resolved resonance cross section provides a constraint that ensures continuity at the RRR/URR interface; within the URR, transmission data from multiple samples and isotopes provide complementary parameter sensitivities. To the author's knowledge, this represents the first URR evaluation to simultaneously fit both measurement types in a unified framework. The simultaneous approach ensures that the final parameters are globally optimal with respect to all constraints rather than potentially trapped in local minima that satisfy one dataset at the expense of another, and it produces a single, self-consistent parameter covariance matrix that properly accounts for the correlations induced by shared parameters across datasets.
+More broadly, each measurement type included in the simultaneous fit provides distinct parameter sensitivities. Total cross-section measurements constrain the sum of all partial cross sections, providing strong sensitivity to $S_\ell$ and $R_\ell^\infty$. Transmission measurements on thick samples exhibit pronounced self-shielding, which is primarily driven by the strength function, helping break the $S_0$--$R_0^\infty$ correlation. Thin-sample transmission, conversely, experiences weaker self-shielding and is more sensitive to the background potential scattering component. Capture cross-section measurements provide direct sensitivity to $\langle\Gamma_\gamma\rangle$, though such data are scarce for these isotopes. Finally, enriched samples isolate individual isotopic contributions, while the natural zirconium samples from Rapp (2019) are strongly self-shielded and simultaneously constrain both $^{90}$Zr and $^{91}$Zr parameters, providing powerful discrimination between smooth and resonant cross-section contributions.
+
+This evaluation also achieves simultaneous fitting of transmission measurements and cross-section constraints within a single optimization framework. Below the URR, the binned resolved resonance cross section provides a constraint that ensures continuity at the RRR/URR interface; within the URR, transmission data from multiple samples and isotopes, including both enriched and natural zirconium samples, provide complementary parameter sensitivities. To the author's knowledge, this represents the first URR evaluation to simultaneously fit both measurement types in a unified framework. The simultaneous approach ensures that the final parameters are globally optimal with respect to all constraints rather than potentially trapped in local minima that satisfy one dataset at the expense of another, and it produces a single, self-consistent parameter covariance matrix that properly accounts for the correlations induced by shared parameters across datasets.
 
 \subsection{Limitations and Future Work}
 \label{ssec:eval_discussion_limitations}
@@ -524,9 +589,9 @@ The reported parameter and cross-section uncertainties are almost certainly unde
 
 A subtle but important issue arises from the treatment of intermediate structure in this evaluation. The doorway state model produces smooth, energy-dependent enhancements to the strength function that significantly elevate the cross section above the compound nucleus baseline, by factors of two to three near the doorway peaks. However, these enhancements are deterministic (zero variance) contributions that do not participate in the resonance fluctuations governing self-shielding. This creates a problem for transport codes that use probability tables to represent URR self-shielding. The standard practice for handling mean discrepancies between the evaluated mean and the sampled mean is multiplicative normalization, but as derived in recent work \cite{Golas2025VariancePreservation}, this multiplicative scaling inadvertently rescales the variance by the square of the same factor, distorting the self-shielding behavior. The variance-preserving transformation proposed in Ref.~\cite{Golas2025VariancePreservation} provides a solution: enforce the evaluated mean via an additive shift rather than multiplicative scaling, thereby preserving the physically sampled variance. However, implementing this correction requires changes to nuclear data processing codes and potentially to the ENDF format itself. Until such changes are adopted, the present evaluation cannot be fully utilized in production transport calculations without accepting some degree of self-shielding bias. This limitation highlights a broader tension in URR evaluation: the physics of intermediate structure produces smooth cross-section contributions that are distinct from compound nucleus fluctuations, yet the ENDF URR format and associated processing tools were designed primarily for compound nucleus statistics.
 
-The intermediate structure model significantly improves agreement with experimental data compared to a purely statistical treatment, but residual discrepancies remain, particularly in the energy region (0.5--0.8~MeV) where the largest doorway contributions occur. The residual analysis (\autoref{fig:eval_residual_summary}) shows that the largest fitting errors coincide with the dominant p-wave doorway peaks. The present treatment uses a sum of independent Lorentzian doorways with energy-independent spreading widths, which is a simplification; in reality, doorway states can interfere with each other and with the compound nucleus background, producing asymmetric line shapes that the simple Lorentzian form cannot capture. Because the doorway parameters (particularly the energies and escape widths) were not varied in the final fit, any errors in these fixed parameters must be compensated by adjustments to the fitted compound nucleus parameters. Future work should explore more sophisticated doorway models, potentially including interference effects, energy-dependent widths, and simultaneous fitting of doorway and compound nucleus parameters.
+The intermediate structure model significantly improves agreement with experimental data compared to a purely statistical treatment, but residual discrepancies remain, particularly in the energy region (0.5--0.8~MeV) where the largest doorway contributions occur. Because the doorway parameters (energies and escape widths) were not varied in the final fit, any errors in these fixed parameters must be compensated by adjustments to the fitted compound nucleus parameters. Future work should explore simultaneous fitting of doorway and compound nucleus parameters, which would require a substantially larger parameter space but could reduce these residual discrepancies.
 
-The complete absence of capture cross-section measurements within the $^{90}$Zr URR (0.8--1.78~MeV) represents the most significant experimental gap in this evaluation. The capture cross section is determined entirely by extrapolation of the radiation width from the resolved region and by consistency requirements with the transmission-derived parameters. For $^{91}$Zr, capture data from Ohgama (2005) and Gan (2024) extend into the lower portion of the URR, providing some constraint, but the upper portion remains unconstrained. New capture cross-section measurements for both isotopes at modern time-of-flight facilities would substantially improve future evaluations.
+The complete absence of capture cross-section measurements within the $^{90}$Zr URR (0.8--1.78~MeV) represents the most significant experimental gap in this evaluation. The capture cross section is determined entirely by extrapolation of the radiation width from the resolved region and by consistency requirements with the transmission-derived parameters. For $^{91}$Zr, capture data from Ohgama (2005) extend into the lower portion of the URR, providing some constraint, but the upper portion remains unconstrained. New capture cross-section measurements for both isotopes at modern time-of-flight facilities would substantially improve future evaluations.
 
 Finally, a practical outcome of this work is the demonstration that historical transmission measurements, previously considered unusable for URR evaluation due to the self-shielding correction problem, can be directly incorporated into modern evaluations. The Musgrove (1977) and Green (1973) datasets were measured decades ago, but by fitting directly to the uncorrected transmission data, this evaluation extracts information from these measurements without inheriting the biases of historical processing. This approach could be applied to legacy transmission data for other isotopes, potentially enabling re-evaluation of URR parameters for nuclides where modern measurements are unavailable. The key requirement is access to the original transmission data rather than only the corrected cross sections.
 
@@ -534,7 +599,7 @@ Finally, a practical outcome of this work is the demonstration that historical t
 \subsection{Comparison to Previous Evaluations}
 \label{ssec:eval_discussion_comparison}
 
-The present evaluation differs substantially from ENDF/B-VIII.1 for both isotopes. For $^{90}$Zr, the inclusion of intermediate structure produces cross sections 5--10\% higher than ENDF/B-VIII.1 in the 0.8--1.0~MeV region. For $^{91}$Zr, the smooth evaluated cross section contrasts with the fluctuating ENDF/B-VIII.1 cross section, which contains artifacts from natural zirconium data processing.
+The present evaluation differs substantially from ENDF/B-VIII.1 for both isotopes. For $^{90}$Zr, the inclusion of intermediate structure produces cross sections approximately 5\% higher than ENDF/B-VIII.1 across the URR, with the enhancement concentrated near the p-wave doorway peaks. For $^{91}$Zr, the smooth evaluated cross section contrasts with the fluctuating ENDF/B-VIII.1 cross section, which contains artifacts from natural zirconium data processing. The MCNP comparison (\autoref{ssec:eval_mcnp_comparison}) demonstrates that these differences translate into substantial improvements in agreement with experimental transmission data, with $\chi^2/N$ reductions of 2--3$\times$ for the natural zirconium and enriched $^{91}$Zr datasets.
 
 These differences have implications for reactor physics applications. Zirconium is used extensively as fuel cladding in light water reactors, and accurate cross sections in the keV--MeV range affect calculations of neutron economy, spectral indices, and reactivity coefficients. The intermediate structure in $^{90}$Zr, in particular, produces enhanced neutron absorption in an energy range that overlaps with the slowing-down spectrum in thermal reactors.
 
